@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="26dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Camera Body & Top Prism in Neon Lime matching settings.png -->
+    <path
+        android:pathData="M 8.5,5 L 15.5,5 L 17.5,7.5 L 21,7.5 C 21.8,7.5 22.5,8.2 22.5,9 L 22.5,18.5 C 22.5,19.3 21.8,20 21,20 L 3,20 C 2.2,20 1.5,19.3 1.5,18.5 L 1.5,9 C 1.5,8.2 2.2,7.5 3,7.5 L 6.5,7.5 Z"
+        android:strokeColor="?attr/neoAccent"
+        android:strokeWidth="2.4"
+        android:fillColor="#00000000"
+        android:strokeLineJoin="round" />
+    <!-- Center Lens -->
+    <path
+        android:pathData="M 8.5,13.8 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0 Z"
+        android:strokeColor="?attr/neoAccent"
+        android:strokeWidth="2.4"
+        android:fillColor="#00000000" />
+</vector>

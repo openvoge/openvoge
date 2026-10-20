@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ═══ OPENVOGE NEO-BRUTALIST DARK BRAND IDENTITY ═══ -->
+    <!-- New goal.png palette: Black + White + Lime Green accent -->
+    <color name="neo_lime">#C8F031</color>           <!-- Electric Lime Green (primary accent) -->
+    <color name="neo_mint">#C8F031</color>           <!-- Alias for lime (terminal / live packet) -->
+    <color name="neo_coral">#C8F031</color>          <!-- Remapped: lime for RPM label / redline -->
+    <color name="neo_purple">#000000</color>         <!-- Remapped: black -->
+    <color name="neo_yellow">#FFFFFF</color>         <!-- Remapped: white -->
+    <color name="neo_black">#000000</color>          <!-- Sticker Black -->
+
+    <!-- Primary Accent & Highlights -->
+    <color name="primary">#C8F031</color>            <!-- Lime Accent -->
+    <color name="primary_variant">#A8E000</color>
+    <color name="primary_glow">#40C8F031</color>
+    <color name="secondary">#C8F031</color>          <!-- Lime -->
+    <color name="accent_green">#C8F031</color>       <!-- Lime -->
+    <color name="accent_red">#000000</color>         <!-- Black -->
+    <color name="accent_azure">#000000</color>       <!-- Black -->
+
+    <!-- Warm Cream Neo-Brutalist Paper Surfaces -->
+    <color name="surface">#18191E</color>            <!-- Exact Canvas Cream from goal.png -->
+    <color name="surface_elevated">#23262F</color>   <!-- Pure White Cards -->
+    <color name="surface_elevated_start">#23262F</color>
+    <color name="surface_elevated_end">#23262F</color>
+    <color name="surface_sunken">#121316</color>
+    <color name="surface_sunken_start">#121316</color>
+    <color name="surface_sunken_end">#121316</color>
+    <color name="surface_accent">#2D313D</color>
+    <color name="surface_accent_strong">#353A47</color>
+    <color name="surface_border">#000000</color>
+
+    <!-- Hard Offset Shadows & Strokes (Zero blur, pure black) -->
+    <color name="border">#000000</color>
+    <color name="hard_shadow">#000000</color>
+    <color name="neumorph_highlight">#000000</color>
+    <color name="neumorph_shadow">#000000</color>
+    <color name="neumorph_shadow_mid">#000000</color>
+    <color name="neumorph_bevel">#000000</color>
+
+    <!-- Typography -->
+    <color name="header_panel">#18191E</color>
+    <color name="header_text">#F2F0EA</color>
+    <color name="header_text_secondary">#C9CBD1</color>
+    <color name="primary_text">#F2F0EA</color>
+    <color name="secondary_text">#C9CBD1</color>
+    <color name="muted_text">#9CA3AF</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- Speedometer (Neo-Brutalist Pop Dial) -->
+    <color name="speedometer_panel">#23262F</color>
+    <color name="speedometer_ring">#F2F0EA</color>
+    <color name="speedometer_inner_ring">#F2F0EA</color>
+    <color name="speedometer_track">#23262F</color>
+    <color name="speedometer_progress">#C8F031</color> <!-- Lime Active Arc -->
+    <color name="speedometer_major_tick">#F2F0EA</color>
+    <color name="speedometer_minor_tick">#9E9E9E</color>
+    <color name="speedometer_number">#F2F0EA</color>
+    <color name="speedometer_speed">#F2F0EA</color>
+    <color name="speedometer_unit">#F2F0EA</color>    <!-- Black KM/H text -->
+    <color name="speedometer_caption">#7A7A7A</color>
+    <color name="speedometer_needle">#F2F0EA</color>
+    <color name="speedometer_hub">#F2F0EA</color>
+    <color name="speedometer_hub_outer">#C8F031</color> <!-- Lime Hub Ring -->
+    <color name="speedometer_hub_inner">#23262F</color>
+    <!-- Semantic neo-brutalist surfaces & ink (overridden in values-night) -->
+    <color name="neo_card">#23262F</color>
+    <color name="neo_ink">#F2F0EA</color>
+    <color name="neo_ink_muted">#A3A6AE</color>
+    <color name="neo_track">#3A3E4A</color>
+    <color name="neo_dot">#1AFFFFFF</color>
+</resources>

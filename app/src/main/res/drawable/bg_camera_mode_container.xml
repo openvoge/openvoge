@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mode Selector Pill: White body, 3.5dp black border, 4.5dp hard drop shadow, 16dp rounded corners matching goal.png -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Hard Black Shadow Offset to Bottom-Right -->
+    <item
+        android:left="4.5dp"
+        android:top="4.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="#000000" />
+        </shape>
+    </item>
+
+    <!-- Main Front Pill Body -->
+    <item
+        android:right="4.5dp"
+        android:bottom="4.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="16dp" />
+            <solid android:color="@color/neo_card" />
+            <stroke
+                android:width="3.5dp"
+                android:color="#000000" />
+        </shape>
+    </item>
+</layer-list>

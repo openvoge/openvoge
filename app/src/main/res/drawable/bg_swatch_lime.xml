@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tactile Swatch Lime: #C8F031 fill, 3.2dp black stroke, 4.5dp hard shadow matching settings.png -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Hard Black Shadow Offset to Bottom-Right -->
+    <item
+        android:left="4.5dp"
+        android:top="4.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="13dp" />
+            <solid android:color="#000000" />
+        </shape>
+    </item>
+
+    <!-- Main Front Swatch Body -->
+    <item
+        android:right="4.5dp"
+        android:bottom="4.5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="13dp" />
+            <solid android:color="#C8F031" />
+            <stroke
+                android:width="3.2dp"
+                android:color="#000000" />
+        </shape>
+    </item>
+</layer-list>

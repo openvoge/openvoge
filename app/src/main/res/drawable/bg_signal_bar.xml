@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One RSSI bar; tinted ink (lit) or muted (unlit) from code -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="1dp" />
+    <solid android:color="@color/neo_ink" />
+</shape>

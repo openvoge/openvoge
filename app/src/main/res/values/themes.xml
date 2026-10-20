@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.OpenVOGE" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryContainer">@color/primary_variant</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/surface</item>
+        <item name="android:navigationBarColor" tools:targetApi="o_mr1">@color/surface</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="materialButtonStyle">@style/Widget.Vogy.Button</item>
+        <item name="materialCardViewStyle">@style/Widget.Vogy.CardView</item>
+        <item name="neoAccent">#C8F031</item>
+        <item name="neoOnAccent">#000000</item>
+        <item name="bottomSheetDialogTheme">@style/Theme.OpenVoge.BottomSheetDialog</item>
+    </style>
+    <style name="Theme.Vogy" parent="Theme.OpenVOGE" />
+
+    <!-- Accent overlays applied at runtime from the Settings swatches -->
+    <style name="ThemeOverlay.OpenVoge.Accent.Lime" parent="">
+        <item name="neoAccent">#C8F031</item>
+        <item name="neoOnAccent">#000000</item>
+    </style>
+    <style name="ThemeOverlay.OpenVoge.Accent.Blue" parent="">
+        <item name="neoAccent">#2B50E6</item>
+        <item name="neoOnAccent">#FFFFFF</item>
+    </style>
+    <style name="ThemeOverlay.OpenVoge.Accent.Orange" parent="">
+        <item name="neoAccent">#D9542B</item>
+        <item name="neoOnAccent">#FFFFFF</item>
+    </style>
+    <style name="ThemeOverlay.OpenVoge.Accent.Grey" parent="">
+        <item name="neoAccent">#8C8C8C</item>
+        <item name="neoOnAccent">#000000</item>
+    </style>
+
+    <style name="Theme.OpenVoge.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.OpenVoge.BottomSheet</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor" tools:targetApi="o_mr1">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="enableEdgeToEdge">true</item>
+        <item name="paddingBottomSystemWindowInsets">false</item>
+    </style>
+
+    <style name="Widget.OpenVoge.BottomSheet" parent="Widget.Material3.BottomSheet">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+    </style>
+
+    <!-- Neo-Brutalist Button: Chunky, Bold, Pill or Rounded -->
+    <style name="Widget.Vogy.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.Vogy.Pill</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.05</item>
+    </style>
+
+    <!-- Neo-Brutalist Card: Rounded with Bold Stroke -->
+    <style name="Widget.Vogy.CardView" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/ShapeAppearance.Vogy.Card</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeWidth">2.5dp</item>
+        <item name="strokeColor">@color/border</item>
+    </style>
+
+    <!-- Shapes -->
+    <style name="ShapeAppearance.Vogy.Pill" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ShapeAppearance.Vogy.Card" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Vogy.Square" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+</resources>

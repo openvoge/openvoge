@@ -1,0 +1,1285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="72dp">
+
+        <!-- ═══ 1. TOP BAR: ASTERISK BUTTON + OPENVOGE BADGE + MENU BUTTON ═══ -->
+        <LinearLayout
+            android:id="@+id/topBarCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Left tactile square button: Settings / Starburst -->
+            <ImageButton
+                android:id="@+id/btnCameraSection"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
+                android:background="@drawable/bg_neo_box_white"
+                android:contentDescription="@string/settings_title"
+                android:padding="13dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_asterisk_neo" />
+
+            <!-- Center Neo-Brutalist Sticker Badge: OPEN VOGE with Coral Shadow -->
+            <LinearLayout
+                android:id="@+id/llTopBadge"
+                android:layout_width="0dp"
+                android:layout_height="54dp"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_openvoge_pill"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+
+                <TextView
+                    android:id="@+id/tvTopBarTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:letterSpacing="0.18"
+                    android:text="OPENVOGE"
+                    android:textAllCaps="true"
+                    android:textColor="?attr/neoAccent"
+                    android:textSize="14.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Right tactile square button: Section Toggle (CAM in Dashboard, DASH in Camera) -->
+            <LinearLayout
+                android:id="@+id/btnNavAction"
+                android:layout_width="54dp"
+                android:layout_height="54dp"
+                android:background="@drawable/bg_neo_box_lime"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingBottom="5dp"
+                android:paddingEnd="4dp">
+
+                <ImageView
+                    android:id="@+id/ivNavActionIcon"
+                    app:tint="?attr/neoOnAccent"
+                    android:layout_width="22dp"
+                    android:layout_height="20dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_camera_neo" />
+
+                <TextView
+                    android:id="@+id/tvNavActionText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:fontFamily="sans-serif-black"
+                    android:includeFontPadding="false"
+                    android:letterSpacing="0.06"
+                    android:text="@string/nav_cam"
+                    android:textColor="?attr/neoOnAccent"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ═══ DASHBOARD SECTION CONTAINER ═══ -->
+        <LinearLayout
+            android:id="@+id/dashboardSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:orientation="vertical">
+
+            <!-- ═══ 2. LOCATION SECTION: TILTED STICKER + EJIDO HEADLINE ═══ -->
+            <LinearLayout
+                android:id="@+id/headerLocationSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical">
+
+                <!-- Yellow Tilted Sticker Tag -->
+                <TextView
+                    android:id="@+id/tvLocationBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_location_sticker"
+                    android:fontFamily="@font/space_mono_bold"
+                    android:letterSpacing="0.14"
+                    android:rotation="-3"
+                    android:text="@string/dashboard_location_label"
+                    android:textAllCaps="true"
+                    android:textColor="#000000"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <!-- Big Bold City Headline -->
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/space_grotesk_bold"
+                    android:letterSpacing="-0.04"
+                    android:text="EJIDO"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="44sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- ═══ 3. CONNECTION BANNER CARD ═══ -->
+            <LinearLayout
+                android:id="@+id/cardConnectionBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_neo_card_coral"
+                android:gravity="center_vertical"
+                android:rotation="-1.2"
+                android:orientation="horizontal"
+                android:paddingStart="18dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="16dp">
+
+                <View
+                    android:id="@+id/viewConnectionDot"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginEnd="14dp"
+                    android:background="@drawable/bg_status_dot_idle" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvConnectionState"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/space_grotesk_bold"
+                        android:letterSpacing="-0.01"
+                        android:text="@string/main_connection_disconnected"
+                        android:textAllCaps="true"
+                        android:textColor="#FFFFFF"
+                        android:textSize="19sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvConnectionDetail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:fontFamily="@font/space_grotesk_bold"
+                        android:text="@string/main_connection_no_device"
+                        android:textColor="#DDDDDD"
+                        android:textSize="10.5sp" />
+
+                </LinearLayout>
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnToggleConnection"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_neo_btn_connect"
+                    android:fontFamily="@font/space_grotesk_bold"
+                    android:letterSpacing="0.02"
+                    android:minHeight="0dp"
+                    android:minWidth="0dp"
+                    android:paddingStart="16dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="19dp"
+                    android:paddingBottom="11dp"
+                    android:text="@string/main_connection_btn_connect"
+                    android:textAllCaps="true"
+                    android:textColor="?attr/neoOnAccent"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- ═══ 4. RIDE TELEMETRY MAIN CARD ═══ -->
+            <LinearLayout
+                android:id="@+id/telemetryCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_openvoge_card"
+                android:orientation="vertical"
+                android:paddingStart="18dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="18dp">
+
+                <!-- Card Header: RIDE TELEMETRY info + Yellow Gear Pod -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_ride_telemetry_badge"
+                            android:fontFamily="@font/space_mono_bold"
+                            android:letterSpacing="0.12"
+                            android:text="@string/dashboard_live_title"
+                            android:textAllCaps="true"
+                            android:textColor="?attr/neoOnAccent"
+                            android:textSize="9.5sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvTelemetryStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:letterSpacing="-0.03"
+                            android:text="@string/main_telemetry_waiting"
+                            android:textColor="@color/neo_ink"
+                            android:textSize="28sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvTelemetryDevice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/space_mono_bold"
+                            android:text="@string/main_telemetry_no_device"
+                            android:textColor="@color/neo_ink_muted"
+                            android:textSize="11sp"
+                            android:visibility="gone" />
+
+                    </LinearLayout>
+
+                    <!-- Neo-Brutalist Gear Pod matching mock.png: 1:1 square, 4.1 deg tilt, solid dashes & shadow -->
+                    <dev.vogy.app.GearPodView
+                        android:id="@+id/gearPodView"
+                        android:layout_width="74dp"
+                        android:layout_height="74dp"
+                        android:layout_gravity="top"
+                        android:layout_marginEnd="2dp" />
+
+                </LinearLayout>
+
+                <!-- Segmented Ladder Arc Speedometer -->
+                <dev.vogy.app.SpeedometerView
+                    android:id="@+id/speedometerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="275dp"
+                    android:layout_marginTop="4dp" />
+
+                <!-- Bottom RPM Row: Value + 10-Block Segmented Bar -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvRpmValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:text="--"
+                            android:textColor="@color/neo_ink"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/bg_rpm_badge"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:text="@string/dashboard_rpm_label"
+                            android:textAllCaps="true"
+                            android:textColor="?attr/neoOnAccent"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <!-- 11-Block Horizontal RPM Meter with Redline matching rmp-mock.png -->
+                    <LinearLayout
+                        android:id="@+id/layoutRpmBlocks"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View android:id="@+id/rpmB1" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB2" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB3" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB4" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB5" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB6" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB7" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB8" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB9" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_white" />
+                        <View android:id="@+id/rpmB10" android:layout_width="13dp" android:layout_height="16dp" android:layout_marginEnd="2.5dp" android:background="@drawable/bg_segment_coral" />
+                        <View android:id="@+id/rpmB11" android:layout_width="13dp" android:layout_height="16dp" android:background="@drawable/bg_segment_coral" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ═══ 5. FULL-WIDTH FUEL LEVEL CARD (YELLOW) ═══ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_openvoge_tile_yellow"
+                android:orientation="vertical"
+                android:paddingStart="18dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_marginBottom="2dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:letterSpacing="0.12"
+                        android:text="@string/dashboard_fuel"
+                        android:textAllCaps="true"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                    android:includeFontPadding="false"
+                        android:id="@+id/tvFuelValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/space_grotesk_bold"
+                        android:text="-- %"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- 8 Segmented Fuel Blocks -->
+                <LinearLayout
+                    android:id="@+id/layoutFuelBlocks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <View android:id="@+id/fuelB1" android:layout_width="0dp" android:layout_height="16dp" android:layout_marginEnd="6dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+                    <View android:id="@+id/fuelB2" android:layout_width="0dp" android:layout_height="16dp" android:layout_marginEnd="6dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+                    <View android:id="@+id/fuelB3" android:layout_width="0dp" android:layout_height="16dp" android:layout_marginEnd="6dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+                    <View android:id="@+id/fuelB4" android:layout_width="0dp" android:layout_height="16dp" android:layout_marginEnd="6dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+                    <View android:id="@+id/fuelB5" android:layout_width="0dp" android:layout_height="16dp" android:layout_marginEnd="6dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+                    <View android:id="@+id/fuelB6" android:layout_width="0dp" android:layout_height="16dp" android:layout_marginEnd="6dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+                    <View android:id="@+id/fuelB7" android:layout_width="0dp" android:layout_height="16dp" android:layout_marginEnd="6dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+                    <View android:id="@+id/fuelB8" android:layout_width="0dp" android:layout_height="16dp" android:layout_weight="1" android:background="@drawable/bg_segment_white" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ═══ 6. 2-COLUMN ROW 1: ENGINE TEMP (CORAL) | BATTERY VOLT (BLUE) ═══ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+
+                <!-- Engine Temp -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="112dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_openvoge_tile_coral"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:letterSpacing="0.12"
+                        android:text="@string/dashboard_temperature"
+                        android:textAllCaps="true"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                    android:includeFontPadding="false"
+                    android:gravity="bottom"
+                    android:layout_weight="1"
+                        android:id="@+id/tvTemperatureValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="0dp"
+                        android:fontFamily="@font/space_grotesk_bold"
+                        android:text="-- °C"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <!-- Battery Volt -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="112dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_openvoge_tile_purple"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:letterSpacing="0.12"
+                        android:text="@string/dashboard_voltage"
+                        android:textAllCaps="true"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="9.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                    android:includeFontPadding="false"
+                    android:gravity="bottom"
+                    android:layout_weight="1"
+                        android:id="@+id/tvVoltageValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="0dp"
+                        android:fontFamily="@font/space_grotesk_bold"
+                        android:text="-- V"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ═══ 7. 2-COLUMN ROW 2: AVG SPEED (WHITE) | MAX SPEED (CORAL) ═══ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
+
+                <!-- Avg Speed -->
+                <LinearLayout
+                    android:id="@+id/cardAvgSpeed"
+                    android:layout_width="0dp"
+                    android:layout_height="112dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_openvoge_tile"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_mono_bold"
+                    android:letterSpacing="0.12"
+                    android:text="@string/dashboard_avg_speed"
+                    android:textAllCaps="true"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:includeFontPadding="false"
+                    android:gravity="bottom"
+                    android:layout_weight="1"
+                    android:id="@+id/tvAverageSpeedValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="0dp"
+                    android:fontFamily="@font/space_grotesk_bold"
+                    android:text="-- km/h"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Max Speed -->
+            <LinearLayout
+                android:id="@+id/cardMaxSpeed"
+                android:layout_width="0dp"
+                android:layout_height="112dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_openvoge_tile_coral"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:id="@+id/tvMaxSpeedLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_mono_bold"
+                    android:letterSpacing="0.12"
+                    android:text="@string/dashboard_max_speed"
+                    android:textAllCaps="true"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:includeFontPadding="false"
+                    android:gravity="bottom"
+                    android:layout_weight="1"
+                    android:id="@+id/tvMaxSpeedValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="0dp"
+                    android:fontFamily="@font/space_grotesk_bold"
+                    android:text="-- km/h"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ═══ 8. FULL-WIDTH TRIP DISTANCE CARD (MINT GREEN) ═══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="98dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_openvoge_tile_mint"
+            android:orientation="vertical"
+            android:paddingStart="18dp"
+            android:paddingTop="20dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="16dp"
+            android:rotation="0.8">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_mono_bold"
+                android:letterSpacing="0.12"
+                android:text="@string/dashboard_trip_distance"
+                android:textAllCaps="true"
+                android:textColor="#FFFFFF"
+                android:textSize="9.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                    android:includeFontPadding="false"
+                    android:gravity="bottom"
+                    android:layout_weight="1"
+                android:id="@+id/tvTripKmValue"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="0dp"
+                android:fontFamily="@font/space_grotesk_bold"
+                android:text="-- km"
+                android:textColor="#FFFFFF"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- ═══ 9. 2-COLUMN ROW 3: TRIP TIME (WHITE) | TOTAL MILEAGE (YELLOW) ═══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <!-- Trip Time -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="112dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_openvoge_tile"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_mono_bold"
+                    android:letterSpacing="0.12"
+                    android:text="@string/dashboard_trip_time"
+                    android:textAllCaps="true"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:includeFontPadding="false"
+                    android:gravity="bottom"
+                    android:layout_weight="1"
+                    android:id="@+id/tvTripTimeValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="0dp"
+                    android:fontFamily="@font/space_grotesk_bold"
+                    android:text="--:--"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Total Mileage -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="112dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_openvoge_tile_yellow"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_mono_bold"
+                    android:letterSpacing="0.12"
+                    android:text="@string/main_telemetry_total_km_label"
+                    android:textAllCaps="true"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:includeFontPadding="false"
+                    android:gravity="bottom"
+                    android:layout_weight="1"
+                    android:id="@+id/tvTotalKmValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="0dp"
+                    android:fontFamily="@font/space_grotesk_bold"
+                    android:text="-- km"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ═══ 10. FULL-WIDTH LIVE PACKET TERMINAL CARD ═══ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="32dp"
+            android:background="@drawable/bg_neo_terminal"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/space_mono_bold"
+                android:letterSpacing="0.12"
+                android:text="@string/dashboard_packet_label"
+                android:textAllCaps="true"
+                android:textColor="?attr/neoAccent"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvCommandValue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/space_mono_bold"
+                android:text="> 00 00 00 00 00 00 _"
+                android:textColor="?attr/neoAccent"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ═══ CAMERA SECTION (Pixel-Perfect Neo-Brutalism matching goal.png) ═══ -->
+        <LinearLayout
+            android:id="@+id/cameraSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- 1. MAIN CAMERA VIEWPORT CARD WITH NEO-BRUTALIST DROP SHADOW -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+            <!-- Aspect ratio matches the placeholder art; switches to the live video's ratio once the camera reports it -->
+            <FrameLayout
+                android:id="@+id/cameraViewport"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintDimensionRatio="358:410"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <!-- Hard Black Drop Shadow Layer (Bottom-Right Offset 7dp) -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="7dp"
+                    android:layout_marginTop="7dp"
+                    android:background="@drawable/bg_camera_card_shadow" />
+
+                <!-- Front Card Body with 3.5dp Black Border & 22dp Rounded Corners -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cameraCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="7dp"
+                    android:layout_marginBottom="7dp"
+                    app:cardBackgroundColor="#D8D3C8"
+                    app:cardCornerRadius="22dp"
+                    app:cardElevation="0dp"
+                    app:cardPreventCornerOverlap="false"
+                    app:strokeColor="#000000"
+                    app:strokeWidth="3.5dp">
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <!-- Viewport Placeholder Landscape Illustration matching goal.png -->
+                        <FrameLayout
+                            android:id="@+id/cameraPlaceholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <ImageView
+                                android:id="@+id/ivCameraPlaceholderArt"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@string/menu_camera"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/bg_camera_placeholder_art" />
+
+                            <!-- Legacy / Controller binding targets (hidden from view, preserving controller APIs) -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:orientation="vertical"
+                                android:visibility="gone">
+
+                                <TextView android:id="@+id/tvCameraHint" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                <TextView android:id="@+id/tvCameraStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                <TextView android:id="@+id/tvCameraHost" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                <TextView android:id="@+id/tvCameraStream" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                <Button android:id="@+id/btnToggleCameraConnection" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                <LinearLayout android:id="@+id/cameraWifiBanner" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                                    <ImageView android:id="@+id/ivCameraWifiDot" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                    <TextView android:id="@+id/tvCameraWifiBannerText" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                        </FrameLayout>
+
+                        <!-- Live MJPEG Stream View -->
+                        <ImageView
+                            android:id="@+id/cameraStreamView"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
+
+                        <!-- Live RTSP ExoPlayer Video View -->
+                        <androidx.media3.ui.PlayerView
+                            android:id="@+id/cameraVideoView"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:visibility="gone"
+                            app:resize_mode="zoom"
+                            app:use_controller="false" />
+
+                        <!-- Viewfinder 4 Corner Brackets Overlay (34dp matching goal.png) -->
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="top|start"
+                            android:layout_marginStart="18dp"
+                            android:layout_marginTop="18dp"
+                            android:src="@drawable/ic_camera_viewfinder_corner" />
+
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="top|end"
+                            android:layout_marginEnd="18dp"
+                            android:layout_marginTop="18dp"
+                            android:rotation="90"
+                            android:src="@drawable/ic_camera_viewfinder_corner" />
+
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="bottom|start"
+                            android:layout_marginStart="18dp"
+                            android:layout_marginBottom="18dp"
+                            android:rotation="270"
+                            android:src="@drawable/ic_camera_viewfinder_corner" />
+
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="bottom|end"
+                            android:layout_marginEnd="18dp"
+                            android:layout_marginBottom="18dp"
+                            android:rotation="180"
+                            android:src="@drawable/ic_camera_viewfinder_corner" />
+
+                        <!-- Top-Left REC Pill Badge matching goal.png (only shown when recording) -->
+                        <LinearLayout
+                            android:id="@+id/badgeCameraRec"
+                            android:layout_width="wrap_content"
+                            android:layout_height="28dp"
+                            android:layout_gravity="top|start"
+                            android:layout_marginStart="40dp"
+                            android:layout_marginTop="38dp"
+                            android:background="@drawable/bg_camera_rec_badge"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:visibility="gone">
+
+                            <!-- Blinking/Solid Lime Green Dot -->
+                            <View
+                                android:id="@+id/dotCameraRec"
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:background="@drawable/ic_record_neo"
+                                android:backgroundTint="?attr/neoAccent" />
+
+                            <TextView
+                                android:id="@+id/tvCameraRec"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="7dp"
+                                android:fontFamily="@font/space_mono_bold"
+                                android:includeFontPadding="false"
+                                android:letterSpacing="0.08"
+                                android:text="REC 00:12"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Top-Right LIVE Pill Badge matching goal.png -->
+                        <TextView
+                            android:id="@+id/tvCameraLive"
+                            android:layout_width="wrap_content"
+                            android:layout_height="28dp"
+                            android:layout_gravity="top|end"
+                            android:layout_marginEnd="42dp"
+                            android:layout_marginTop="38dp"
+                            android:background="@drawable/bg_camera_live_badge"
+                            android:fontFamily="@font/space_mono_bold"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:letterSpacing="0.08"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:text="@string/camera_live_badge"
+                            android:textColor="#000000"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <!-- Bottom-Left Speed Telemetry Badge matching goal.png -->
+                        <LinearLayout
+                            android:id="@+id/badgeCameraSpeed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:minWidth="96dp"
+                            android:layout_gravity="bottom|start"
+                            android:layout_marginStart="38dp"
+                            android:layout_marginBottom="44dp"
+                            android:background="@drawable/bg_camera_speed_badge"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp">
+
+                            <TextView
+                                android:id="@+id/tvCameraSpeedValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="@font/space_grotesk_bold"
+                                android:includeFontPadding="false"
+                                android:text="87"
+                                android:textColor="#000000"
+                                android:textSize="28sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvCameraSpeedUnit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:fontFamily="@font/space_mono_bold"
+                                android:includeFontPadding="false"
+                                android:text="KM/H"
+                                android:textColor="#000000"
+                                android:textSize="12.5sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Bottom-Right Fullscreen Button (only while the camera stream is live) -->
+                        <ImageButton
+                            android:id="@+id/btnCameraFullscreen"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="bottom|end"
+                            android:layout_marginEnd="38dp"
+                            android:layout_marginBottom="44dp"
+                            android:background="@drawable/bg_camera_speed_badge"
+                            android:contentDescription="@string/camera_fullscreen"
+                            android:padding="9dp"
+                            android:scaleType="centerInside"
+                            android:src="@drawable/ic_fullscreen_neo"
+                            android:visibility="gone" />
+
+                    </FrameLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </FrameLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- 2. CONTROLS ROW: PHOTO + RECORD/STOP + GALLERY/GRID -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="90dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <!-- Left: Photo Button -->
+                <ImageButton
+                    android:id="@+id/btnCameraPhoto"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_neo_ctrl_btn_square"
+                    android:contentDescription="@string/menu_camera"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_camera_neo" />
+
+                <!-- Center: Record / Stop Circular Button (Prominent) -->
+                <ImageButton
+                    android:id="@+id/btnCameraRecord"
+                    app:tint="?attr/neoOnAccent"
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/bg_neo_ctrl_btn_record"
+                    android:contentDescription="@string/camera_btn_record"
+                    android:padding="15dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_record_btn_neo" />
+
+                <!-- Right: Gallery / Settings Button -->
+                <ImageButton
+                    android:id="@+id/btnCameraConfig"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_neo_ctrl_btn_square"
+                    android:contentDescription="@string/settings_title"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_grid_neo" />
+
+            </RelativeLayout>
+
+            <!-- 3. MODE SELECTOR PILL: PHOTO / VIDEO -->
+            <FrameLayout
+                android:id="@+id/layoutCameraModeSelector"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="14dp"
+                android:background="@drawable/bg_camera_mode_container">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4.5dp"
+                    android:layout_marginBottom="4.5dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/btnModePhoto"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_mode_segment_inactive"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:gravity="center"
+                        android:letterSpacing="0.06"
+                        android:text="@string/camera_mode_photo"
+                        android:textAllCaps="true"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnModeVideo"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_mode_segment_active_right"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:gravity="center"
+                        android:letterSpacing="0.06"
+                        android:text="@string/camera_mode_video"
+                        android:textAllCaps="true"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+            </FrameLayout>
+
+            <!-- 4. BOTTOM TELEMETRY CARDS ROW: RESOLUTION + FRAME RATE -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="28dp"
+                android:orientation="horizontal">
+
+                <!-- Left Card: RESOLUTION -->
+                <LinearLayout
+                    android:id="@+id/cardResolution"
+                    android:layout_width="0dp"
+                    android:layout_height="102dp"
+                    android:layout_marginEnd="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_neo_telemetry_card"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:letterSpacing="0.08"
+                        android:text="@string/camera_spec_resolution"
+                        android:textAllCaps="true"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="11.5sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="bottom"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvResolutionVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:includeFontPadding="false"
+                            android:text="--"
+                            android:textColor="@color/neo_ink"
+                            android:textSize="35sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvResolutionUnit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="3dp"
+                            android:layout_marginBottom="5dp"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:includeFontPadding="false"
+                            android:text="P"
+                            android:textColor="@color/neo_ink"
+                            android:textSize="13.5sp"
+                            android:textStyle="bold"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Right Card: FRAME RATE -->
+                <LinearLayout
+                    android:id="@+id/cardFrameRate"
+                    android:layout_width="0dp"
+                    android:layout_height="102dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_neo_telemetry_card"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:letterSpacing="0.08"
+                        android:text="@string/camera_spec_frame_rate"
+                        android:textAllCaps="true"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="11.5sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="bottom"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvFrameRateVal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:includeFontPadding="false"
+                            android:text="--"
+                            android:textColor="@color/neo_ink"
+                            android:textSize="35sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvFrameRateUnit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="3dp"
+                            android:layout_marginBottom="5dp"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:includeFontPadding="false"
+                            android:text="FPS"
+                            android:textColor="@color/neo_ink"
+                            android:textSize="13.5sp"
+                            android:textStyle="bold"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

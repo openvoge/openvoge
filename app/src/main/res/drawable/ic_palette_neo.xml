@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="26dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Palette Outline in Neon Lime matching settings.png pixel-for-pixel -->
+    <path
+        android:pathData="M 12,3.5 C 7.2,3.5 3.5,7.2 3.5,12 C 3.5,16.5 7,20.5 11.5,20.5 C 13,20.5 13.8,19.2 13.8,18 L 13.8,16.2 C 13.8,15.2 14.8,14.5 16,14.5 C 19,14.5 20.5,12.2 20.5,9.5 C 20.5,5.5 16.5,3.5 12,3.5 Z"
+        android:strokeColor="?attr/neoAccent"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+    <!-- 3 Lime Paint Dots inside -->
+    <path
+        android:pathData="M 7,11 a 1.6,1.6 0 1,0 3.2,0 a 1.6,1.6 0 1,0 -3.2,0 Z"
+        android:fillColor="?attr/neoAccent" />
+    <path
+        android:pathData="M 10.5,7.5 a 1.6,1.6 0 1,0 3.2,0 a 1.6,1.6 0 1,0 -3.2,0 Z"
+        android:fillColor="?attr/neoAccent" />
+    <path
+        android:pathData="M 15,9.5 a 1.4,1.4 0 1,0 2.8,0 a 1.4,1.4 0 1,0 -2.8,0 Z"
+        android:fillColor="?attr/neoAccent" />
+</vector>

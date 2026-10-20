@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="34dp"
+    android:height="34dp"
+    android:viewportWidth="34"
+    android:viewportHeight="34">
+    <!-- Bold 4dp Stroke Viewfinder Corner Bracket matching goal.png -->
+    <path
+        android:pathData="M 2,32 L 2,2 L 32,2"
+        android:strokeColor="#000000"
+        android:strokeWidth="4"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter" />
+</vector>

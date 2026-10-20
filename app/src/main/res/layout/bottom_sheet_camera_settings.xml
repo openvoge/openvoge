@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_openvoge_bottom_sheet"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="20dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="36dp">
+
+    <!-- Neo-Brutalist handle: rounded black pill -->
+    <View
+        android:layout_width="48dp"
+        android:layout_height="5dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_handle_pill" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:fontFamily="@font/space_grotesk_bold"
+        android:includeFontPadding="false"
+        android:text="@string/camera_config_title"
+        android:textColor="@color/neo_ink"
+        android:textSize="28sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/space_mono_bold"
+        android:includeFontPadding="false"
+        android:letterSpacing="0.04"
+        android:text="@string/camera_config_subtitle"
+        android:textColor="@color/neo_ink_muted"
+        android:textSize="11sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_neo_card_white"
+        android:orientation="vertical">
+
+        <!-- Auto-connect Switch Row (neo-brutalist) -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="18dp">
+
+            <ImageView
+                android:id="@+id/ivIconAutoConnect"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_settings_icon_box"
+                android:contentDescription="@string/camera_autoconnect_title"
+                android:padding="11dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_camera_badge_neo" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="12dp"
+                android:layout_toStartOf="@+id/switchAutoConnect"
+                android:layout_toEndOf="@id/ivIconAutoConnect"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/space_grotesk_bold"
+                    android:includeFontPadding="false"
+                    android:text="@string/camera_autoconnect_title"
+                    android:textColor="@color/neo_ink"
+                    android:textSize="16.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:fontFamily="@font/space_mono_bold"
+                    android:includeFontPadding="false"
+                    android:lineSpacingExtra="2dp"
+                    android:text="@string/camera_autoconnect_desc"
+                    android:textColor="@color/neo_ink_muted"
+                    android:textSize="10.5sp" />
+
+            </LinearLayout>
+
+            <!-- Neo-Brutalist Toggle Switch matching settings.png -->
+            <FrameLayout
+                android:id="@+id/switchAutoConnect"
+                android:layout_width="56dp"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_neo_switch_track_on"
+                android:clickable="true"
+                android:focusable="true">
+
+                <View
+                    android:id="@+id/switchAutoConnectThumb"
+                    android:layout_width="21dp"
+                    android:layout_height="21dp"
+                    android:layout_gravity="center_vertical|end"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/bg_neo_switch_thumb" />
+
+            </FrameLayout>
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

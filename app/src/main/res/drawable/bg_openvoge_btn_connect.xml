@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neo-Brutalist Pill Button (Inspired by "NEXT" button in reference image) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Pressed: pressed flat into shadow with mint accent -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <corners android:radius="32dp" />
+            <solid android:color="?attr/neoAccent" />
+            <stroke
+                android:width="2.5dp"
+                android:color="@color/border" />
+        </shape>
+    </item>
+
+    <!-- Normal: White pill with hard black offset drop shadow -->
+    <item>
+        <layer-list>
+            <!-- Hard black shadow offset to bottom-right -->
+            <item
+                android:left="3dp"
+                android:top="4dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="32dp" />
+                    <solid android:color="@color/border" />
+                </shape>
+            </item>
+
+            <!-- Main Button Body -->
+            <item
+                android:bottom="4dp"
+                android:right="3dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="32dp" />
+                    <solid android:color="@color/surface_elevated" />
+                    <stroke
+                        android:width="2.5dp"
+                        android:color="@color/border" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>

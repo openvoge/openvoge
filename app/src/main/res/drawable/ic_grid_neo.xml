@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="26dp"
+    android:viewportWidth="22"
+    android:viewportHeight="22">
+    <!-- Solid Black 2x2 Grid Window matching goal.png -->
+    <path
+        android:pathData="M 0,0 H 22 V 22 H 0 Z M 3.5,3.5 H 8.5 V 8.5 H 3.5 Z M 13.5,3.5 H 18.5 V 8.5 H 13.5 Z M 3.5,13.5 H 8.5 V 18.5 H 3.5 Z M 13.5,13.5 H 18.5 V 18.5 H 13.5 Z"
+        android:fillColor="#000000"
+        android:fillType="evenOdd" />
+</vector>

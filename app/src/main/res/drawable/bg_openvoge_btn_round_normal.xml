@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neo-Brutalist Circular Button Normal: White oval with 3dp hard black offset shadow -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="3dp"
+        android:top="3dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/border" />
+        </shape>
+    </item>
+
+    <item
+        android:bottom="3dp"
+        android:right="3dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/surface_elevated" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/border" />
+        </shape>
+    </item>
+</layer-list>

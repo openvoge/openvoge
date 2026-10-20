@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One motorcycle / Bluetooth device row in the bike picker sheet -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="14dp">
+
+    <ImageView
+        android:id="@+id/ivBikeIcon"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:background="@drawable/bg_settings_icon_box"
+        android:importantForAccessibility="no"
+        android:padding="10dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_motorcycle_neo" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvBikeName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/space_grotesk_bold"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/neo_ink"
+            android:textSize="16.5sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvBikeDetail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/space_mono_bold"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/neo_ink_muted"
+            android:textSize="10.5sp" />
+    </LinearLayout>
+
+    <!-- Sticker tag: AUTO (saved rows, tappable) or MOTO (nearby motorcycles) -->
+    <TextView
+        android:id="@+id/tvBikeTag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/bg_bike_tag_active"
+        android:fontFamily="@font/space_mono_bold"
+        android:letterSpacing="0.08"
+        android:paddingStart="7dp"
+        android:paddingTop="2.5dp"
+        android:paddingEnd="7dp"
+        android:paddingBottom="2.5dp"
+        android:rotation="-3"
+        android:textColor="?attr/neoOnAccent"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- Nearby rows: signal strength bars -->
+    <LinearLayout
+        android:id="@+id/layoutSignalBars"
+        android:layout_width="wrap_content"
+        android:layout_height="18dp"
+        android:gravity="bottom"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <View android:id="@+id/signalBar1" android:layout_width="4dp" android:layout_height="6dp" android:layout_marginEnd="2dp" android:background="@drawable/bg_signal_bar" />
+        <View android:id="@+id/signalBar2" android:layout_width="4dp" android:layout_height="10dp" android:layout_marginEnd="2dp" android:background="@drawable/bg_signal_bar" />
+        <View android:id="@+id/signalBar3" android:layout_width="4dp" android:layout_height="14dp" android:layout_marginEnd="2dp" android:background="@drawable/bg_signal_bar" />
+        <View android:id="@+id/signalBar4" android:layout_width="4dp" android:layout_height="18dp" android:background="@drawable/bg_signal_bar" />
+    </LinearLayout>
+
+    <!-- Saved rows: forget this bike -->
+    <ImageButton
+        android:id="@+id/btnBikeForget"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/bg_neo_ctrl_btn_square"
+        android:contentDescription="@string/bike_forget"
+        android:padding="10dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_close_neo"
+        android:visibility="gone" />
+
+</LinearLayout>

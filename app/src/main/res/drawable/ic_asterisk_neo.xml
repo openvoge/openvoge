@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 8-spoke Neo-Brutalist asterisk / starburst -->
+    <!-- Vertical bar -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M12,4 L12,20" />
+    <!-- Horizontal bar -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M4,12 L20,12" />
+    <!-- Diagonal 1 -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M6.34,6.34 L17.66,17.66" />
+    <!-- Diagonal 2 -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M6.34,17.66 L17.66,6.34" />
+</vector>

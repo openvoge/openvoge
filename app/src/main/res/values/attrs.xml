@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- User-selectable accent (Settings > Theme swatches) and the ink drawn on top of it -->
+    <attr name="neoAccent" format="color" />
+    <attr name="neoOnAccent" format="color" />
+</resources>

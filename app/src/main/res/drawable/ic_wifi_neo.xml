@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="26dp"
+    android:height="26dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Concentric Wi-Fi Broadcast Arcs & Dot in Neon Lime matching settings.png -->
+    <path
+        android:pathData="M 3.5,8 C 8.5,3.5 15.5,3.5 20.5,8"
+        android:strokeColor="?attr/neoAccent"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M 6.5,11.5 C 10,8.5 14,8.5 17.5,11.5"
+        android:strokeColor="?attr/neoAccent"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M 9.5,15 C 11.2,13.5 12.8,13.5 14.5,15"
+        android:strokeColor="?attr/neoAccent"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M 10.8,19 a 1.2,1.2 0 1,0 2.4,0 a 1.2,1.2 0 1,0 -2.4,0 Z"
+        android:fillColor="?attr/neoAccent" />
+</vector>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neo-Brutalist Switch Track OFF: Light grey/cream fill, 3dp black stroke -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="#D8D4CA" />
+    <stroke
+        android:width="3dp"
+        android:color="#000000" />
+</shape>

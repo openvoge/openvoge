@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="358dp"
+    android:height="415dp"
+    android:viewportWidth="358"
+    android:viewportHeight="415">
+
+    <!-- 1. Sky Backdrop -->
+    <path
+        android:pathData="M0,0 H358 V415 H0 Z"
+        android:fillColor="#D8D3C8" />
+
+    <!-- 2. Left Mountain Body & Outline -->
+    <path
+        android:pathData="M 0,216 L 73,159 L 170,246 L 170,415 L 0,415 Z"
+        android:fillColor="#A9A498" />
+    <path
+        android:pathData="M 0,216 L 73,159 L 170,246"
+        android:strokeColor="#000000"
+        android:strokeWidth="5"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter" />
+
+    <!-- 3. Right Mountain Body & Outline -->
+    <path
+        android:pathData="M 170,246 L 240,200 L 358,260 L 358,415 L 170,415 Z"
+        android:fillColor="#A9A498" />
+    <path
+        android:pathData="M 170,246 L 240,200 L 358,260"
+        android:strokeColor="#000000"
+        android:strokeWidth="5"
+        android:strokeLineCap="square"
+        android:strokeLineJoin="miter" />
+
+    <!-- 4. Sun (Unbroken Circle In Front of Mountain) matching goal.png -->
+    <path
+        android:pathData="M 210,142 a 54,54 0 1,0 108,0 a 54,54 0 1,0 -108,0 Z"
+        android:fillColor="?attr/neoAccent"
+        android:strokeColor="#000000"
+        android:strokeWidth="6" />
+
+    <!-- 5. Road Body -->
+    <path
+        android:pathData="M 145,246 L 205,246 L 330,415 L 25,415 Z"
+        android:fillColor="#000000" />
+
+    <!-- 6. Chunky Cream Road Dashes matching goal.png -->
+    <path
+        android:pathData="M 171,268 H 179 V 298 H 171 Z"
+        android:fillColor="#ECE8DF" />
+    <path
+        android:pathData="M 171,326 H 179 V 370 H 171 Z"
+        android:fillColor="#ECE8DF" />
+    <path
+        android:pathData="M 171,402 H 179 V 415 H 171 Z"
+        android:fillColor="#ECE8DF" />
+
+</vector>
