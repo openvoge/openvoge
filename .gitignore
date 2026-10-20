@@ -49,3 +49,5 @@ build/
 apk*/
 *bin/
 output/
+# Gradle wrapper must be versioned so CI can build
+!gradle/wrapper/gradle-wrapper.jar

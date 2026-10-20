@@ -52,7 +52,10 @@ Other VOGE models that use the same telemetry service should work. Reports and f
 
 ## Getting started
 
-### Build and install
+### Install
+Download the latest APK from [Releases](../../releases/latest). A new release is built, tagged and published by GitHub Actions on every push to `main`, with notes generated from the commit history.
+
+### Build from source
 
 ```bash
 git clone https://github.com/openvoge/openvoge.git
