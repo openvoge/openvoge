@@ -37,6 +37,8 @@ class RouteProgressTracker(val route: MotoRoute) {
         private const val WINDOW_LOST_METERS = 60.0
         /** GPS jitter can pull the fix back a few meters past a turn: don't show that turn again. */
         private const val PASSED_TURN_HYSTERESIS_METERS = 20.0
+        /** Estimates stop this short of the next maneuver: only a real fix may say it was passed. */
+        private const val ESTIMATE_STOP_BEFORE_MANEUVER_METERS = 3.0
         private const val METERS_PER_DEGREE = 111_195.0
     }
 
@@ -49,9 +51,13 @@ class RouteProgressTracker(val route: MotoRoute) {
     private val maneuverStarts = route.maneuvers.map { cumulative[it.beginShapeIndex.coerceIn(points.indices)] }
     private var segment = 0
     private var lastNext = 0
+    /** Distance along the route and off-route distance of the last real fix. */
+    private var fixAlong = 0.0
+    private var fixOffRoute = 0.0
 
     val totalMeters: Double get() = cumulative.lastOrNull() ?: 0.0
 
+    /** A real GPS fix: snap it onto the route. */
     fun update(position: GeoPoint): NavProgress {
         require(points.size >= 2 && route.maneuvers.isNotEmpty()) { "Route has no geometry" }
         val lastSegment = points.size - 2
@@ -61,10 +67,31 @@ class RouteProgressTracker(val route: MotoRoute) {
             if (anywhere.distance < best.distance) best = anywhere
         }
         segment = best.segment
+        fixAlong = cumulative[best.segment] + best.t * (cumulative[best.segment + 1] - cumulative[best.segment])
+        fixOffRoute = best.distance
+        return progressAt(fixAlong, best.segment, best.t, best.distance)
+    }
 
-        val start = points[best.segment]
-        val end = points[best.segment + 1]
-        val along = cumulative[best.segment] + best.t * (cumulative[best.segment + 1] - cumulative[best.segment])
+    /**
+     * Dead reckoning between fixes: where the rider probably is [meters] past the last fix.
+     * It counts down to the next maneuver but stops just short of it, so a late or lost fix can
+     * never show the following turn before the rider has actually made this one.
+     */
+    fun estimate(meters: Double): NavProgress {
+        require(points.size >= 2 && route.maneuvers.isNotEmpty()) { "Route has no geometry" }
+        val stopAt = maneuverStarts[lastNext] - ESTIMATE_STOP_BEFORE_MANEUVER_METERS
+        val along = minOf(fixAlong + meters.coerceAtLeast(0.0), max(fixAlong, stopAt))
+        // Segment holding that distance: the last point at or before it
+        var index = cumulative.indexOfLast { it <= along }.coerceIn(0, points.size - 2)
+        while (index < points.size - 2 && cumulative[index + 1] <= along) index++
+        val length = cumulative[index + 1] - cumulative[index]
+        val t = if (length > 0) ((along - cumulative[index]) / length).coerceIn(0.0, 1.0) else 0.0
+        return progressAt(along, index, t, fixOffRoute)
+    }
+
+    private fun progressAt(along: Double, segmentIndex: Int, t: Double, offRouteMeters: Double): NavProgress {
+        val start = points[segmentIndex]
+        val end = points[segmentIndex + 1]
         val remaining = (totalMeters - along).coerceAtLeast(0.0)
 
         // The next maneuver is the first one that starts ahead of the rider; the last is the destination
@@ -84,8 +111,8 @@ class RouteProgressTracker(val route: MotoRoute) {
             distanceToManeuverMeters = (legEnd - along).coerceAtLeast(0.0),
             distanceRemainingMeters = remaining,
             durationRemainingSeconds = if (remaining < ARRIVAL_METERS) 0.0 else duration,
-            offRouteMeters = best.distance,
-            snapped = GeoPoint(start.lat + best.t * (end.lat - start.lat), start.lon + best.t * (end.lon - start.lon)),
+            offRouteMeters = offRouteMeters,
+            snapped = GeoPoint(start.lat + t * (end.lat - start.lat), start.lon + t * (end.lon - start.lon)),
             routeBearing = bearing(start, end),
             arrived = remaining < ARRIVAL_METERS,
         )

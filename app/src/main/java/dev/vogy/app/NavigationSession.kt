@@ -49,7 +49,7 @@ object NavigationSession {
         val rerouting: Boolean,
         val arrived: Boolean,
     ) {
-        val nextManeuver: Maneuver? get() = progress?.let { route.maneuvers[it.nextManeuverIndex] }
+        val nextManeuver: Maneuver? get() = progress?.let { route.maneuvers.getOrNull(it.nextManeuverIndex) }
     }
 
     private const val LOG_TAG = "NAV"
@@ -59,6 +59,14 @@ object NavigationSession {
     private const val OFF_ROUTE_FIXES = 3
     private const val REROUTE_COOLDOWN_MS = 15_000L
     private const val ARRIVED_SHOWN_MS = 8_000L
+    /**
+     * The dashboard gets a burst every second whether or not a fix arrived, like the official app
+     * (Mapbox reports progress every second). Without it the TFT drops the arrow between slow fixes.
+     */
+    private const val GUIDANCE_TICK_MS = 1_000L
+    /** Between fixes progress is estimated from the last speed, for at most this long. */
+    private const val MAX_DEAD_RECKONING_SECONDS = 3.0
+    private const val MIN_MOVING_SPEED_MPS = 1.0
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val _state = MutableStateFlow<State?>(null)
@@ -72,6 +80,10 @@ object NavigationSession {
     private var simulationJob: Job? = null
     private var rerouteJob: Job? = null
     private var finishJob: Job? = null
+    private var tickerJob: Job? = null
+    /** The last real (or simulated) fix and when it arrived, for estimating progress until the next. */
+    private var lastFix: Location? = null
+    private var lastFixAt = 0L
     private var offRouteFixes = 0
     private var lastRerouteAt = 0L
     private var lastBurstAt = 0L
@@ -88,10 +100,17 @@ object NavigationSession {
         lastRerouteAt = 0
         lastBurstAt = 0
         dashboardPrimed = false
+        lastFix = null
         _state.value = State(destination, route, progress = null, position = null, simulated = simulate, rerouting = false, arrived = false)
         primeDashboard()
         ContextCompat.startForegroundService(context, NavigationService.startIntent(context, simulate))
         if (simulate) simulationJob = scope.launch { simulate(route) }
+        tickerJob = scope.launch {
+            while (true) {
+                delay(GUIDANCE_TICK_MS)
+                tick()
+            }
+        }
     }
 
     /** The rider ended navigation. */
@@ -117,18 +136,43 @@ object NavigationSession {
             return
         }
 
+        lastFix = location
+        lastFixAt = SystemClock.elapsedRealtime()
         val offRouteLimit = maxOf(OFF_ROUTE_MIN_METERS, location.accuracy * 2.0)
         offRouteFixes = if (progress.offRouteMeters > offRouteLimit) offRouteFixes + 1 else 0
         val shownPosition = if (offRouteFixes == 0) onRoute(location, progress) else location
         _state.value = current.copy(progress = progress, position = shownPosition)
 
         if (offRouteFixes >= OFF_ROUTE_FIXES) reroute(location)
+        // The dashboard is fed by the steady tick, not by fixes: see GUIDANCE_TICK_MS
+    }
+
+    /**
+     * Once a second: move the progress on from the last fix at the rider's speed (so distances
+     * count down smoothly between fixes) and send the dashboard its burst.
+     */
+    private fun tick() {
+        val current = _state.value ?: return
+        if (current.arrived) return
+        var progress = current.progress
+        val fix = lastFix
+        val routeTracker = tracker
+        if (progress != null && fix != null && routeTracker != null && offRouteFixes == 0 && !current.rerouting) {
+            val seconds = ((SystemClock.elapsedRealtime() - lastFixAt) / 1000.0).coerceAtMost(MAX_DEAD_RECKONING_SECONDS)
+            val speed = if (fix.hasSpeed()) fix.speed.toDouble() else 0.0
+            if (speed >= MIN_MOVING_SPEED_MPS && seconds > 0.0) {
+                // Estimates never finish the route or pass a turn: only real fixes do that
+                progress = routeTracker.estimate(speed * seconds)
+                _state.value = current.copy(progress = progress, position = onRoute(fix, progress))
+            }
+        }
         sendGuidance(current.route, progress, current.destination)
     }
 
     // ── Dashboard ────────────────────────────────────────────────────────────
 
-    private fun sendGuidance(route: MotoRoute, progress: NavProgress, destination: Place) {
+    /** One burst for the dashboard; before the first fix it keeps the opening (empty) guidance. */
+    private fun sendGuidance(route: MotoRoute, progress: NavProgress?, destination: Place) {
         val link = dashboard?.takeIf { it.isReady } ?: run {
             dashboardPrimed = false
             return
@@ -141,7 +185,7 @@ object NavigationSession {
             return
         }
         lastBurstAt = now
-        val guidance = BikeNavProtocol.guidance(route, progress, destination.name)
+        val guidance = progress?.let { BikeNavProtocol.guidance(route, it, destination.name) } ?: BikeNavProtocol.Guidance.EMPTY
         link.send(BikeNavProtocol.burst(guidance, Calendar.getInstance(), chineseSystemLanguage()))
     }
 
@@ -175,9 +219,15 @@ object NavigationSession {
                 val route = OpenMapServices.motoRoutes(
                     GeoPoint(location.latitude, location.longitude), current.destination.point, language, heading
                 ).first()
-                tracker = RouteProgressTracker(route)
+                val newTracker = RouteProgressTracker(route)
+                // Progress must describe the new route's maneuvers right away, never the old one's
+                val fix = lastFix ?: location
+                val progress = newTracker.update(GeoPoint(fix.latitude, fix.longitude))
+                tracker = newTracker
                 offRouteFixes = 0
-                _state.value = _state.value?.copy(route = route, rerouting = false)
+                _state.value = _state.value?.copy(
+                    route = route, progress = progress, position = onRoute(fix, progress), rerouting = false
+                )
                 Log.i(LOG_TAG, "Rerouted: ${route.lengthMeters.toInt()} m")
             } catch (e: CancellationException) {
                 throw e
@@ -193,6 +243,7 @@ object NavigationSession {
         sendEndFrame()
         simulationJob?.cancel()
         rerouteJob?.cancel()
+        tickerJob?.cancel()
         _state.value = arrivedState.copy(arrived = true, rerouting = false)
         NavigationService.stopSelfIfRunning()
         finishJob = scope.launch {
@@ -206,7 +257,9 @@ object NavigationSession {
         simulationJob?.cancel()
         rerouteJob?.cancel()
         finishJob?.cancel()
+        tickerJob?.cancel()
         tracker = null
+        lastFix = null
         _state.value = null
     }
 

@@ -11,6 +11,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.location.LocationListener
 import android.location.LocationManager
+import android.location.LocationRequest
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
@@ -18,6 +19,7 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -111,14 +113,26 @@ class NavigationService : Service() {
     private fun startLocationUpdates() {
         val manager = getSystemService(LocationManager::class.java) ?: return
         locationManager = manager
-        // One provider only, so fixes don't alternate between sources: fused when the platform has it
-        val provider = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && manager.hasProvider(LocationManager.FUSED_PROVIDER)) {
-            LocationManager.FUSED_PROVIDER
-        } else {
-            LocationManager.GPS_PROVIDER
-        }
+        // One provider only, so fixes don't alternate between sources. The GNSS chip itself first:
+        // it gives a fresh fix every second while riding, without the smoothing lag of fused positions.
+        val provider = listOfNotNull(
+            LocationManager.GPS_PROVIDER,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) LocationManager.FUSED_PROVIDER else null,
+            LocationManager.NETWORK_PROVIDER,
+        ).firstOrNull { manager.isProviderEnabled(it) } ?: LocationManager.GPS_PROVIDER
         try {
-            manager.requestLocationUpdates(provider, FIX_INTERVAL_MS, 0f, locationListener, Looper.getMainLooper())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // The plain overload asks for "balanced" quality, which on many phones means
+                // Wi-Fi/cell positions every few seconds: far too slow and coarse for turn-by-turn
+                val request = LocationRequest.Builder(FIX_INTERVAL_MS)
+                    .setQuality(LocationRequest.QUALITY_HIGH_ACCURACY)
+                    .setMinUpdateIntervalMillis(FIX_INTERVAL_MS / 2)
+                    .build()
+                manager.requestLocationUpdates(provider, request, ContextCompat.getMainExecutor(this), locationListener)
+            } else {
+                manager.requestLocationUpdates(provider, FIX_INTERVAL_MS, 0f, locationListener, Looper.getMainLooper())
+            }
+            Log.i(LOG_TAG, "Location updates from $provider")
         } catch (e: Exception) {
             Log.w(LOG_TAG, "No location updates from $provider: $e")
         }

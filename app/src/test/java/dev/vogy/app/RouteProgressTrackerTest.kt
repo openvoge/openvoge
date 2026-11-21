@@ -71,6 +71,45 @@ class RouteProgressTrackerTest {
     }
 
     @Test
+    fun estimatesCountDownBetweenFixes() {
+        val tracker = RouteProgressTracker(route)
+        val fix = tracker.update(route.points.first())
+        // One second at ~36 km/h
+        val estimate = tracker.estimate(10.0)
+        assertEquals(fix.nextManeuverIndex, estimate.nextManeuverIndex)
+        assertEquals(fix.distanceToManeuverMeters - 10.0, estimate.distanceToManeuverMeters, 0.5)
+        assertEquals(fix.distanceRemainingMeters - 10.0, estimate.distanceRemainingMeters, 0.5)
+        assertTrue(estimate.durationRemainingSeconds < fix.durationRemainingSeconds)
+        // Estimates are relative to the last fix, not cumulative
+        assertEquals(estimate.distanceRemainingMeters, tracker.estimate(10.0).distanceRemainingMeters, 0.01)
+    }
+
+    @Test
+    fun estimatesNeverPassTheNextTurn() {
+        val tracker = RouteProgressTracker(route)
+        val fix = tracker.update(route.points.first())
+        // Far more than the ~240 m to the first turn: a stale speed must not skip the turn
+        val estimate = tracker.estimate(2_000.0)
+        assertEquals(fix.nextManeuverIndex, estimate.nextManeuverIndex)
+        assertEquals(3.0, estimate.distanceToManeuverMeters, 0.5)
+        // A real fix past the turn does move on
+        val turn = route.maneuvers[fix.nextManeuverIndex]
+        for (i in 0..turn.beginShapeIndex + 2) tracker.update(route.points[i])
+        assertTrue(tracker.estimate(0.0).nextManeuverIndex > fix.nextManeuverIndex)
+    }
+
+    @Test
+    fun estimatedPositionStaysOnTheRoute() {
+        val tracker = RouteProgressTracker(route)
+        tracker.update(route.points.first())
+        val estimate = tracker.estimate(50.0)
+        // The estimated point is a point of the route: snapping it back gives the same progress
+        val check = RouteProgressTracker(route).update(estimate.snapped)
+        assertTrue(check.offRouteMeters < 1.0)
+        assertEquals(estimate.distanceRemainingMeters, check.distanceRemainingMeters, 1.0)
+    }
+
+    @Test
     fun snapsOntoTheRouteLine() {
         val tracker = RouteProgressTracker(route)
         val a = route.points[3]
