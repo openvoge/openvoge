@@ -1,0 +1,12 @@
+{
+  "enableArtifact": false,
+  "permissions": {
+    "deny": [
+      "mcp__claude_ai_Claude_Docs",
+      "Artifact",
+      "ArtifactComments",
+      "ArtifactData",
+      "ArtifactCheck"
+    ]
+  }
+}

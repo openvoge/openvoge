@@ -30,6 +30,30 @@ OpenVOGE is an unofficial replacement for the stock VOGE app. It talks to the mo
 - **Recording continues with the screen off** and the app in the background. Only the Stop button (in the app or in the notification) ends it. Video decoding pauses while you're not looking, to save battery.
 - Record and photo are disabled until the camera is connected.
 
+### Map
+- **Ride map** in the MAP tab, drawn in the app's own neo-brutalist style. It follows the light/dark theme. The base map stays neutral: your accent color is kept for your position, your route and **fuel stations**.
+- **Follows your position**. Pan away to look around, then tap the crosshair to start following again. The bike's live speed is shown in the corner.
+- **Where to?** Search places as you type, or tap **Nearest fuel** to list fuel stations around you, nearest first. That includes the many stations that have no name on the map.
+- **Long-press anywhere** to route there. Use it for places that no search engine knows.
+- **Motorcycle routes** with up to two alternatives. Each shows its time, distance and arrival time. Tap a route on the map or its card to pick it.
+- **No account and no API key.** Everything comes from [OpenStreetMap](https://www.openstreetmap.org) and free community services:
+
+  | What | Service |
+  |---|---|
+  | Map tiles | [OpenFreeMap](https://openfreemap.org), drawn by [MapLibre](https://maplibre.org) |
+  | Place search | [Photon](https://photon.komoot.io) |
+  | Nearest fuel | [Nominatim](https://nominatim.org) |
+  | Motorcycle routes | [Valhalla](https://valhalla.github.io/valhalla/), FOSSGIS server |
+
+- **What leaves the phone**, only when you use each feature:
+  - the map tiles for the area on screen;
+  - what you type in the search, with your position so nearby places come first;
+  - the area around you when you tap Nearest fuel;
+  - the start and end of a route.
+
+  Nothing is sent in the background.
+- The map engine only starts the first time you open the tab.
+
 ### Look & feel
 - Neo-brutalist UI: hard shadows, bold borders, Space Grotesk and Space Mono typefaces.
 - **Light, dark and auto** themes.
@@ -76,7 +100,7 @@ Requirements: JDK 17 and Android SDK 36 (Android Studio Ladybug or newer works o
 | Permission | Why |
 |---|---|
 | Nearby devices (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`) | Find and connect to the bike |
-| Location (Android 11 and below only) | Required by Android for Bluetooth scanning on older versions |
+| Location | Your position on the map and the city name on the dashboard. On Android 11 and below, Android also requires it for Bluetooth scanning |
 | Notifications | The "Recording" notification with its Stop button |
 | Foreground service, wake lock | Keep the camera session alive while recording with the screen off |
 

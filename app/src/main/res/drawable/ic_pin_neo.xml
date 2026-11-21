@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Map pin: a place in the search results -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:pathData="M 12,21.5 C 12,21.5 4.5,14.5 4.5,9.5 a 7.5,7.5 0 0,1 15,0 C 19.5,14.5 12,21.5 12,21.5 Z"
+        android:strokeColor="#000000"
+        android:strokeWidth="2.5"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000" />
+
+    <path
+        android:pathData="M 9.5,9.5 a 2.5,2.5 0 1,0 5,0 a 2.5,2.5 0 1,0 -5,0 Z"
+        android:fillColor="#000000" />
+</vector>

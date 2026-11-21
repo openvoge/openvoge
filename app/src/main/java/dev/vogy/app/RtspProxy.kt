@@ -25,13 +25,16 @@ import java.util.concurrent.atomic.AtomicBoolean
  *    Fixes non-compliant `npt=0Z-` -> `npt=0.000-`.
  * 3. Bidirectional URI translation:
  *    Rewrites `127.0.0.1:<port>` <-> `targetHost` in requests, responses, and SDP bodies.
- * 4. UDP Punch & RTCP forwarding:
- *    When server RTP/RTCP ports are negotiated in SETUP, forwards client UDP traffic
- *    to the camera so NAT keep-alives and RTCP feedback work seamlessly.
+ * 4. RTP relay + recording tap:
+ *    SETUP's `client_port` is rewritten so the camera sends RTP/RTCP to sockets owned by the
+ *    proxy. Packets are forwarded to ExoPlayer's ports (when [forwardToPlayer]) and video
+ *    packets are handed to [recorder]: one camera session feeds both preview and recording.
  */
 class RtspProxy(
     private val targetHost: String = "192.72.1.1",
-    private val targetPort: Int = 554
+    private val targetPort: Int = 554,
+    /** Receives the H.264 RTP stream while recording. */
+    private val recorder: StreamRecorder? = null
 ) {
     companion object {
         private const val TAG = "RtspProxy"
@@ -41,6 +44,13 @@ class RtspProxy(
     private val isRunning = AtomicBoolean(false)
     private var proxyThread: Thread? = null
     private val activeSockets = ConcurrentHashMap.newKeySet<Socket>()
+    private val relays = ConcurrentHashMap.newKeySet<RtpRelay>()
+
+    /** Off while nothing is on screen: the player isn't decoding, so don't send it packets. */
+    @Volatile var forwardToPlayer = true
+
+    /** Proxy RTP port -> ExoPlayer's original client_port pair, while a SETUP is in flight. */
+    private val pendingSetups = ConcurrentHashMap<Int, Pair<Int, Int>>()
 
     val port: Int
         get() = serverSocket?.localPort ?: -1
@@ -81,9 +91,110 @@ class RtspProxy(
             try { it.close() } catch (_: Exception) {}
         }
         activeSockets.clear()
+        relays.forEach { it.close() }
+        relays.clear()
+        pendingSetups.clear()
 
         proxyThread?.interrupt()
         proxyThread = null
+    }
+
+    // ─── RTP relay ───────────────────────────────────────────────────────────
+
+    private val clientPortRegex = Regex("client_port=(\\d+)-(\\d+)")
+
+    /** `client_port=A-B` (ExoPlayer) -> `client_port=P-(P+1)` (proxy relay sockets). */
+    private fun interceptSetupTransport(header: String): String {
+        if (header.contains("TCP", ignoreCase = true)) return header // interleaved: nothing to relay
+        val match = clientPortRegex.find(header) ?: return header
+        val playerRtp = match.groupValues[1].toInt()
+        val playerRtcp = match.groupValues[2].toInt()
+        val relay = openRelay(playerRtp, playerRtcp) ?: return header
+        relays.add(relay)
+        pendingSetups[relay.rtpPort] = playerRtp to playerRtcp
+        return header.replace(match.value, "client_port=${relay.rtpPort}-${relay.rtpPort + 1}")
+    }
+
+    private fun restoreSetupTransport(header: String): String {
+        val match = clientPortRegex.find(header) ?: return header
+        val original = pendingSetups.remove(match.groupValues[1].toInt()) ?: return header
+        return header.replace(match.value, "client_port=${original.first}-${original.second}")
+    }
+
+    /** Pulls the H.264 payload type and parameter sets out of the DESCRIBE answer. */
+    private fun readSdp(sdp: String) {
+        val rtpmap = Regex("a=rtpmap:(\\d+)\\s+H264/", RegexOption.IGNORE_CASE).find(sdp)
+        rtpmap?.let { recorder?.h264PayloadType = it.groupValues[1].toInt() }
+        val sprop = Regex("sprop-parameter-sets=([^;\\s]+)").find(sdp)?.groupValues?.get(1)
+        recorder?.setSdpParameterSets(sprop)
+        Log.i(TAG, "SDP: H264 pt=${rtpmap?.groupValues?.get(1)} sprop=${sprop != null}")
+    }
+
+    /** Binds the even/odd UDP port pair RTP requires. */
+    private fun openRelay(playerRtp: Int, playerRtcp: Int): RtpRelay? {
+        repeat(10) {
+            val rtp = runCatching { DatagramSocket(0) }.getOrNull() ?: return@repeat
+            if (rtp.localPort % 2 != 0) {
+                rtp.close()
+                return@repeat
+            }
+            val rtcp = runCatching { DatagramSocket(rtp.localPort + 1) }.getOrNull()
+            if (rtcp == null) {
+                rtp.close()
+                return@repeat
+            }
+            rtp.receiveBufferSize = 1 shl 20 // absorb keyframe bursts
+            return RtpRelay(rtp, rtcp, playerRtp, playerRtcp)
+        }
+        return null
+    }
+
+    /**
+     * The UDP pair the camera streams to. Each packet is forwarded to ExoPlayer and, for RTP,
+     * offered to the recorder (a no-op unless recording). Threads block in receive(): no CPU idle.
+     */
+    private inner class RtpRelay(
+        private val rtpSocket: DatagramSocket,
+        private val rtcpSocket: DatagramSocket,
+        playerRtpPort: Int,
+        playerRtcpPort: Int
+    ) {
+        val rtpPort: Int get() = rtpSocket.localPort
+        private val loopback: InetAddress = InetAddress.getByName("127.0.0.1")
+
+        init {
+            pump(rtpSocket, playerRtpPort, tapToRecorder = true)
+            pump(rtcpSocket, playerRtcpPort, tapToRecorder = false)
+        }
+
+        private fun pump(socket: DatagramSocket, playerPort: Int, tapToRecorder: Boolean) {
+            Thread({
+                val buffer = ByteArray(2048)
+                val packet = DatagramPacket(buffer, buffer.size)
+                val outgoing = DatagramPacket(buffer, 0, loopback, playerPort)
+                while (!socket.isClosed) {
+                    try {
+                        packet.length = buffer.size
+                        socket.receive(packet)
+                        if (tapToRecorder) recorder?.onRtpPacket(buffer, packet.length)
+                        if (forwardToPlayer) {
+                            outgoing.length = packet.length
+                            socket.send(outgoing)
+                        }
+                    } catch (_: Exception) {
+                        if (socket.isClosed) break
+                    }
+                }
+            }, "RtpRelay-$playerPort").apply {
+                isDaemon = true
+                start()
+            }
+        }
+
+        fun close() {
+            runCatching { rtpSocket.close() }
+            runCatching { rtcpSocket.close() }
+        }
     }
 
     private fun handleConnection(clientSocket: Socket) {
@@ -141,6 +252,9 @@ class RtspProxy(
                                 if (rewritten.startsWith("Content-Length:", ignoreCase = true) && bodyStr != null) {
                                     rewritten = "Content-Length: ${bodyStr.toByteArray(Charsets.ISO_8859_1).size}"
                                 }
+                                if (rewritten.startsWith("Transport:", ignoreCase = true)) {
+                                    rewritten = interceptSetupTransport(rewritten)
+                                }
                                 Log.d(TAG, "C->S: $rewritten")
                                 targetOut.write(rewritten + "\r\n")
                             }
@@ -185,6 +299,7 @@ class RtspProxy(
                                     read += r
                                 }
                                 val rawBody = String(buf, 0, read)
+                                if (rawBody.startsWith("v=")) readSdp(rawBody)
                                 if (rawBody.contains(targetHost)) {
                                     rawBody.replace(targetHost, "127.0.0.1:$proxyPort")
                                 } else {
@@ -206,7 +321,12 @@ class RtspProxy(
                                     }
                                 }
 
-                                // 2. Sanitize Range header
+                                // 2. Point the SETUP reply back at ExoPlayer's own ports
+                                if (rewritten.startsWith("Transport:", ignoreCase = true)) {
+                                    rewritten = restoreSetupTransport(rewritten)
+                                }
+
+                                // 3. Sanitize Range header
                                 if (rewritten.startsWith("Range:", ignoreCase = true)) {
                                     rewritten = rewritten.replace("npt=0Z-", "npt=0.000-")
                                 }

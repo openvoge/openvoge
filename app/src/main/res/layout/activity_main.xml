@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Root: the scrolling page plus the bottom section bar floating over it -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<androidx.core.widget.NestedScrollView
     android:id="@+id/mainRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -20,9 +25,9 @@
         android:paddingStart="16dp"
         android:paddingTop="16dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="72dp">
+        android:paddingBottom="100dp">
 
-        <!-- ═══ 1. TOP BAR: ASTERISK BUTTON + OPENVOGE BADGE + MENU BUTTON ═══ -->
+        <!-- ═══ 1. TOP BAR: ASTERISK BUTTON + OPENVOGE BADGE ═══ -->
         <LinearLayout
             android:id="@+id/topBarCard"
             android:layout_width="match_parent"
@@ -47,7 +52,7 @@
                 android:layout_width="0dp"
                 android:layout_height="54dp"
                 android:layout_marginStart="14dp"
-                android:layout_marginEnd="14dp"
+                android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_openvoge_pill"
                 android:gravity="center"
@@ -66,42 +71,6 @@
                     android:textColor="?attr/neoAccent"
                     android:textSize="14.5sp"
                     android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Right tactile square button: Section Toggle (CAM in Dashboard, DASH in Camera) -->
-            <LinearLayout
-                android:id="@+id/btnNavAction"
-                android:layout_width="54dp"
-                android:layout_height="54dp"
-                android:background="@drawable/bg_neo_box_lime"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingBottom="5dp"
-                android:paddingEnd="4dp">
-
-                <ImageView
-                    android:id="@+id/ivNavActionIcon"
-                    app:tint="?attr/neoOnAccent"
-                    android:layout_width="22dp"
-                    android:layout_height="20dp"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_camera_neo" />
-
-                <TextView
-                    android:id="@+id/tvNavActionText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="1dp"
-                    android:fontFamily="sans-serif-black"
-                    android:includeFontPadding="false"
-                    android:letterSpacing="0.06"
-                    android:text="@string/nav_cam"
-                    android:textColor="?attr/neoOnAccent"
-                    android:textSize="9.5sp"
-                    android:textStyle="bold" />
-
             </LinearLayout>
 
         </LinearLayout>
@@ -1280,6 +1249,363 @@
 
         </LinearLayout>
 
+        <!-- ═══ MAP SECTION: fills the rest of the screen (fillViewport + weight) ═══ -->
+        <LinearLayout
+            android:id="@+id/mapSection"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="16dp"
+            android:layout_weight="1"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:minHeight="360dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+        <!-- Map card: takes whatever the route card below leaves -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="240dp">
+
+            <!-- Hard black drop shadow, same offset as the camera card -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="7dp"
+                android:layout_marginTop="7dp"
+                android:background="@drawable/bg_camera_card_shadow" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mapCard"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="7dp"
+                android:layout_marginBottom="7dp"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="0dp"
+                app:cardPreventCornerOverlap="false"
+                app:strokeColor="#000000"
+                app:strokeWidth="3.5dp">
+
+                <!-- RideMapController inserts the MapView at index 0 the first time the section opens -->
+                <FrameLayout
+                    android:id="@+id/mapContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- Top: "Where to?" opens the destination search sheet -->
+                    <LinearLayout
+                        android:id="@+id/mapSearchBar"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_gravity="top"
+                        android:layout_marginStart="14dp"
+                        android:layout_marginTop="14dp"
+                        android:layout_marginEnd="14dp"
+                        android:background="@drawable/bg_neo_box_white"
+                        android:clickable="true"
+                        android:contentDescription="@string/map_search_hint"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="18dp"
+                        android:paddingBottom="4dp">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_search_neo" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:ellipsize="end"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:maxLines="1"
+                            android:text="@string/map_search_hint"
+                            android:textColor="#000000"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+
+                    <!-- Bike speed under the search bar, same badge as the camera view -->
+                    <LinearLayout
+                        android:id="@+id/badgeMapSpeed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_gravity="top|start"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="84dp"
+                        android:background="@drawable/bg_camera_speed_badge"
+                        android:gravity="center_vertical"
+                        android:minWidth="96dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp">
+
+                        <TextView
+                            android:id="@+id/tvMapSpeedValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/space_grotesk_bold"
+                            android:includeFontPadding="false"
+                            android:text="0"
+                            android:textColor="#000000"
+                            android:textSize="28sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvMapSpeedUnit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:fontFamily="@font/space_mono_bold"
+                            android:includeFontPadding="false"
+                            android:text="KM/H"
+                            android:textColor="#000000"
+                            android:textSize="12.5sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Bottom-right: follow my position (accent while following) -->
+                    <ImageButton
+                        android:id="@+id/btnMapLocate"
+                        android:layout_width="54dp"
+                        android:layout_height="54dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_marginEnd="14dp"
+                        android:layout_marginBottom="14dp"
+                        android:background="@drawable/bg_neo_box_white"
+                        android:contentDescription="@string/map_locate"
+                        android:padding="13dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_locate_neo" />
+
+                </FrameLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </FrameLayout>
+
+        <!-- Route card: destination, route choices (filled in code), status while loading or on errors -->
+        <LinearLayout
+            android:id="@+id/routeCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_neo_card_white"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="20dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvRouteTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/space_grotesk_bold"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:textColor="@color/neo_ink"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvRouteDetail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:fontFamily="@font/space_mono_bold"
+                        android:includeFontPadding="false"
+                        android:maxLines="1"
+                        android:textColor="@color/neo_ink_muted"
+                        android:textSize="10.5sp" />
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btnRouteClear"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_neo_ctrl_btn_square"
+                    android:contentDescription="@string/map_route_clear"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_close_neo" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvRouteStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="@font/space_mono_bold"
+                android:textColor="@color/neo_ink"
+                android:textSize="11.5sp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layoutRouteOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        </LinearLayout>
+
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>
+
+    <!-- ═══ BOTTOM SECTION BAR: DASH / CAM / MAP ═══ -->
+    <LinearLayout
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/bg_neo_box_white"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="10dp">
+
+        <LinearLayout
+            android:id="@+id/navTabDash"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_tab_active"
+            android:clickable="true"
+            android:contentDescription="@string/nav_to_dashboard"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/ivNavTabDash"
+                android:layout_width="22dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_dashboard_bars_neo" />
+
+            <TextView
+                android:id="@+id/tvNavTabDash"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:fontFamily="sans-serif-black"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.06"
+                android:text="@string/nav_dash"
+                android:textColor="#000000"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <Space
+            android:layout_width="6dp"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:id="@+id/navTabCam"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:contentDescription="@string/nav_to_camera"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/ivNavTabCam"
+                android:layout_width="22dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_camera_neo" />
+
+            <TextView
+                android:id="@+id/tvNavTabCam"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:fontFamily="sans-serif-black"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.06"
+                android:text="@string/nav_cam"
+                android:textColor="#000000"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <Space
+            android:layout_width="6dp"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:id="@+id/navTabMap"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:contentDescription="@string/nav_to_map"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/ivNavTabMap"
+                android:layout_width="22dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_map_neo" />
+
+            <TextView
+                android:id="@+id/tvNavTabMap"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:fontFamily="sans-serif-black"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.06"
+                android:text="@string/nav_map"
+                android:textColor="#000000"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

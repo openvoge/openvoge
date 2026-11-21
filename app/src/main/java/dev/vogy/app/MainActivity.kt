@@ -91,8 +91,12 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
 
     private enum class Section {
         DASHBOARD,
-        CAMERA
+        CAMERA,
+        MAP
     }
+
+    /** One tab of the bottom section bar. */
+    private class NavTab(val section: Section, val root: View, val icon: ImageView, val label: TextView)
 
     companion object {
         private const val PREFS_UI = "ui_prefs"
@@ -102,6 +106,7 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         private const val KEY_CAM_SAVED_SSID = "cam_saved_ssid"
         private const val KEY_ACCENT_COLOR = "key_accent_color"
         private const val FPS_WINDOW_MS = 2_000L
+        private const val LIVE_EDGE_CHECK_MS = 500L
         private const val REQUEST_NOTIFICATIONS = 4202
         private const val PLACEHOLDER_ASPECT = "358:410"
     }
@@ -110,11 +115,13 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
     private lateinit var tvConnectionState: TextView
     private lateinit var tvTopBarTitle: TextView
     private lateinit var btnCameraSection: ImageButton
-    private lateinit var btnNavAction: View
-    private lateinit var ivNavActionIcon: ImageView
-    private lateinit var tvNavActionText: TextView
+    private lateinit var navTabs: List<NavTab>
     private lateinit var dashboardSection: View
     private lateinit var cameraSection: View
+    private lateinit var mapSection: View
+    private lateinit var tvMapSpeedValue: TextView
+    private lateinit var tvMapSpeedUnit: TextView
+    private lateinit var rideMap: RideMapController
     private lateinit var speedometerView: SpeedometerView
     private lateinit var tvRpmValue: TextView
     private lateinit var tvTelemetryStatus: TextView
@@ -137,6 +144,8 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
     private lateinit var cameraStreamView: ImageView
     private lateinit var cameraVideoView: PlayerView
     private var exoPlayer: ExoPlayer? = null
+    private var previewWifiLock: android.net.wifi.WifiManager.WifiLock? = null
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private lateinit var cameraViewport: View
     private lateinit var btnCameraFullscreen: ImageButton
     private lateinit var tvResolutionUnit: TextView
@@ -164,6 +173,8 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
     private var recSeconds = 0
     private var isRecording = false
     private var videoPausedInBackground = false
+    /** Video track disabled while recording off-screen; the proxy keeps recording the stream. */
+    private var previewDetachedForRecording = false
     private lateinit var badgeCameraRec: View
     private lateinit var dotCameraRec: View
     private lateinit var cameraWifiBanner: View
@@ -213,12 +224,17 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         isLocationPermissionRequestInFlight = false
-        if (permissions.values.any { it } || hasLocationPermission()) {
+        val granted = permissions.values.any { it } || hasLocationPermission()
+        rideMap.onLocationPermissionResult(granted)
+        if (granted) {
             lifecycleScope.launch {
                 tvStatus.text = resolveLocationName()
             }
         } else {
             showLocationFallback()
+            if (currentSection == Section.MAP) {
+                Toast.makeText(this, R.string.map_location_denied, Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -239,6 +255,14 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
             )
             insets
         }
+        val bottomNav = findViewById<View>(R.id.bottomNav)
+        val bottomNavMargin = (14 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            (view.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin = bottomNavMargin + systemBars.bottom
+            view.requestLayout()
+            insets
+        }
 
         val dotSpacing = (24 * resources.displayMetrics.density).toInt().coerceAtLeast(16)
         val dotRadius = 1.2f * resources.displayMetrics.density
@@ -255,11 +279,22 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         tvConnectionState = findViewById(R.id.tvConnectionState)
         tvTopBarTitle = findViewById(R.id.tvTopBarTitle)
         btnCameraSection = findViewById(R.id.btnCameraSection)
-        btnNavAction = findViewById(R.id.btnNavAction)
-        ivNavActionIcon = findViewById(R.id.ivNavActionIcon)
-        tvNavActionText = findViewById(R.id.tvNavActionText)
+        navTabs = listOf(
+            NavTab(Section.DASHBOARD, findViewById(R.id.navTabDash), findViewById(R.id.ivNavTabDash), findViewById(R.id.tvNavTabDash)),
+            NavTab(Section.CAMERA, findViewById(R.id.navTabCam), findViewById(R.id.ivNavTabCam), findViewById(R.id.tvNavTabCam)),
+            NavTab(Section.MAP, findViewById(R.id.navTabMap), findViewById(R.id.ivNavTabMap), findViewById(R.id.tvNavTabMap))
+        )
         dashboardSection = findViewById(R.id.dashboardSection)
         cameraSection = findViewById(R.id.cameraSection)
+        mapSection = findViewById(R.id.mapSection)
+        tvMapSpeedValue = findViewById(R.id.tvMapSpeedValue)
+        tvMapSpeedUnit = findViewById(R.id.tvMapSpeedUnit)
+        rideMap = RideMapController(
+            activity = this,
+            section = mapSection,
+            requestLocationPermission = ::requestLocationPermissionsIfNeeded,
+            decorateSheet = ::applyDottedSheetBackground
+        )
         speedometerView = findViewById(R.id.speedometerView)
         tvRpmValue = findViewById(R.id.tvRpmValue)
         tvTelemetryStatus = findViewById(R.id.tvTelemetryStatus)
@@ -358,12 +393,15 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             showSettingsSheet()
         }
-        btnNavAction.setOnClickListener {
-            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-            if (currentSection == Section.CAMERA) {
-                showDashboardSection()
-            } else {
-                showCameraSection()
+        navTabs.forEach { tab ->
+            tab.root.setOnClickListener {
+                if (tab.section == currentSection) return@setOnClickListener
+                it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                when (tab.section) {
+                    Section.DASHBOARD -> showDashboardSection()
+                    Section.CAMERA -> showCameraSection()
+                    Section.MAP -> showMapSection()
+                }
             }
         }
 
@@ -411,7 +449,7 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (currentSection == Section.CAMERA) {
+                if (currentSection != Section.DASHBOARD) {
                     showDashboardSection()
                 } else {
                     isEnabled = false
@@ -656,12 +694,27 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
 
     override fun onStart() {
         super.onStart()
+        if (previewDetachedForRecording) {
+            previewDetachedForRecording = false
+            cameraController.setPreviewActive(true)
+            exoPlayer?.let { player ->
+                player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+                    .setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, false)
+                    .build()
+                player.setPlaybackSpeed(1f)
+                startLiveEdgeCatchUp()
+                acquirePreviewWifiLock()
+            }
+        }
         // Resume the live preview that was paused while the app was in the background
         if (videoPausedInBackground) {
             videoPausedInBackground = false
             exoPlayer?.takeIf { isCameraConnected && !mjpegStreamActive }?.let { player ->
+                player.setPlaybackSpeed(1f)
                 player.prepare()
                 player.play()
+                startLiveEdgeCatchUp()
+                acquirePreviewWifiLock()
             }
         }
     }
@@ -670,10 +723,22 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         // Swap the launcher icon only once we're off screen: toggling the alias we were launched
         // from can close the task on some launchers if done while visible.
         syncLauncherIconWithAccent()
-        // Nobody is watching: stop decoding video to save battery. The camera keeps recording to its SD card.
+        // Nobody is watching: stop decoding video to save battery
         exoPlayer?.takeIf { it.playbackState != Player.STATE_IDLE }?.let { player ->
-            player.stop()
-            videoPausedInBackground = true
+            stopLiveEdgeCatchUp()
+            releasePreviewWifiLock()
+            if (CameraSession.userWantsRecording) {
+                // Recording: keep the RTSP session (the proxy records from it) but drop the video
+                // track so nothing is decoded, and stop forwarding packets to the player.
+                player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+                    .setTrackTypeDisabled(androidx.media3.common.C.TRACK_TYPE_VIDEO, true)
+                    .build()
+                cameraController.setPreviewActive(false)
+                previewDetachedForRecording = true
+            } else {
+                player.stop()
+                videoPausedInBackground = true
+            }
         }
         super.onStop()
     }
@@ -854,13 +919,15 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         cameraPlaceholder.visibility = View.GONE
         cameraVideoView.visibility = View.VISIBLE
 
+        // Live preview: keep the buffer tiny. Anything buffered is delay you see on screen.
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                1_500, // minBufferMs
-                5_000, // maxBufferMs
-                500,   // bufferForPlaybackMs
-                1_000  // bufferForPlaybackAfterRebufferMs
+                300,   // minBufferMs
+                1_000, // maxBufferMs
+                100,   // bufferForPlaybackMs
+                200    // bufferForPlaybackAfterRebufferMs
             )
+            .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
         val renderersFactory = DefaultRenderersFactory(this)
@@ -951,6 +1018,9 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
                 })
             }
 
+        startLiveEdgeCatchUp()
+        acquirePreviewWifiLock()
+
         val mediaSource = buildRtspMediaSource(url, rtspForceTcp)
         player.setMediaSource(mediaSource)
         player.playWhenReady = true
@@ -968,7 +1038,6 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
             .setForceUseRtpTcp(forceTcp)
             .setTimeoutMs(12_000)
             .setUserAgent("Lavf/58.29.100") // FFmpeg User-Agent for maximum dashcam compat
-            .setDebugLoggingEnabled(true)
             .createMediaSource(mediaItem)
     }
 
@@ -1115,12 +1184,71 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
     }
 
     private fun stopPlayer() {
+        stopLiveEdgeCatchUp()
+        releasePreviewWifiLock()
         exoPlayer?.stop()
     }
 
     private fun releasePlayer() {
+        stopLiveEdgeCatchUp()
+        releasePreviewWifiLock()
         exoPlayer?.release()
         exoPlayer = null
+    }
+
+    /**
+     * ExoPlayer never drops frames to catch up on a live RTSP stream, so every network stall adds
+     * delay for good. Whatever sits in the buffer is lag: play a bit faster until it drains.
+     * (Seeking would restart the RTSP session on most dashcams.)
+     */
+    private val liveEdgeRunnable = object : Runnable {
+        override fun run() {
+            val player = exoPlayer ?: return
+            if (player.playbackState == Player.STATE_READY) {
+                val behindMs = player.totalBufferedDuration
+                val speed = when {
+                    behindMs > 1_000 -> 1.4f
+                    behindMs > 400 -> 1.15f
+                    behindMs < 150 -> 1f
+                    else -> player.playbackParameters.speed
+                }
+                if (speed != player.playbackParameters.speed) {
+                    player.setPlaybackSpeed(speed)
+                }
+            }
+            mainHandler.postDelayed(this, LIVE_EDGE_CHECK_MS)
+        }
+    }
+
+    private fun startLiveEdgeCatchUp() {
+        mainHandler.removeCallbacks(liveEdgeRunnable)
+        mainHandler.postDelayed(liveEdgeRunnable, LIVE_EDGE_CHECK_MS)
+    }
+
+    private fun stopLiveEdgeCatchUp() {
+        mainHandler.removeCallbacks(liveEdgeRunnable)
+    }
+
+    /** Keeps the Wi-Fi radio out of power-save while the preview is on screen (big latency win on 2.4 GHz). */
+    @Suppress("DEPRECATION")
+    private fun acquirePreviewWifiLock() {
+        if (previewWifiLock?.isHeld == true) return
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            android.net.wifi.WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+        } else {
+            android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF
+        }
+        previewWifiLock = (applicationContext.getSystemService(WIFI_SERVICE) as android.net.wifi.WifiManager)
+            .createWifiLock(mode, "OpenVOGE:CameraPreview")
+            .apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+    }
+
+    private fun releasePreviewWifiLock() {
+        previewWifiLock?.takeIf { it.isHeld }?.release()
+        previewWifiLock = null
     }
 
     /** Banner dot: still when disconnected, blinks while a connection is in progress, solid accent once connected. */
@@ -1181,29 +1309,43 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         showDashboardSection()
     }
 
-    private fun showDashboardSection() {
-        currentSection = Section.DASHBOARD
-        dashboardSection.visibility = View.VISIBLE
-        cameraSection.visibility = View.GONE
+    /** Shows one section's container, hides the others and syncs the bottom bar and title. */
+    private fun switchToSection(section: Section) {
+        currentSection = section
+        dashboardSection.visibility = if (section == Section.DASHBOARD) View.VISIBLE else View.GONE
+        cameraSection.visibility = if (section == Section.CAMERA) View.VISIBLE else View.GONE
+        mapSection.visibility = if (section == Section.MAP) View.VISIBLE else View.GONE
         btnCameraSection.setImageResource(R.drawable.ic_asterisk_neo)
         btnCameraSection.contentDescription = getString(R.string.settings_title)
-        ivNavActionIcon.setImageResource(R.drawable.ic_camera_neo)
-        tvNavActionText.setText(R.string.nav_cam)
-        btnNavAction.contentDescription = getString(R.string.nav_to_camera)
+        renderBottomNav()
         updateTopBarTitle()
+    }
+
+    /** Selected tab: accent fill with on-accent ink. Others: plain black ink on the white bar. */
+    private fun renderBottomNav() {
+        val onAccent = MaterialColors.getColor(navTabs.first().root, R.attr.neoOnAccent)
+        navTabs.forEach { tab ->
+            val selected = tab.section == currentSection
+            if (selected) tab.root.setBackgroundResource(R.drawable.bg_nav_tab_active) else tab.root.background = null
+            val ink = if (selected) onAccent else Color.BLACK
+            tab.icon.imageTintList = android.content.res.ColorStateList.valueOf(ink)
+            tab.label.setTextColor(ink)
+            tab.root.isSelected = selected
+        }
+    }
+
+    private fun showDashboardSection() {
+        switchToSection(Section.DASHBOARD)
         tvConnectionState.text = telemetryStatusMessage.ifEmpty { getString(R.string.main_connection_disconnected) }
     }
 
+    private fun showMapSection() {
+        switchToSection(Section.MAP)
+        rideMap.onSectionShown()
+    }
+
     private fun showCameraSection() {
-        currentSection = Section.CAMERA
-        dashboardSection.visibility = View.GONE
-        cameraSection.visibility = View.VISIBLE
-        btnCameraSection.setImageResource(R.drawable.ic_asterisk_neo)
-        btnCameraSection.contentDescription = getString(R.string.settings_title)
-        ivNavActionIcon.setImageResource(R.drawable.ic_dashboard_bars_neo)
-        tvNavActionText.setText(R.string.nav_dash)
-        btnNavAction.contentDescription = getString(R.string.nav_to_dashboard)
-        updateTopBarTitle()
+        switchToSection(Section.CAMERA)
         tvConnectionState.text = cameraStatusMessage.ifEmpty { getString(R.string.main_camera_waiting) }
 
         // REC badge only shown when actively recording
@@ -1844,10 +1986,10 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         tvTopBarTitle.typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
         tvTopBarTitle.letterSpacing = 0.18f
         tvTopBarTitle.textSize = 14.5f
-        tvTopBarTitle.text = if (currentSection == Section.CAMERA) {
-            "BIKE CAM"
-        } else {
-            currentBikeName ?: "OPENVOGE"
+        tvTopBarTitle.text = when (currentSection) {
+            Section.CAMERA -> "BIKE CAM"
+            Section.MAP -> "RIDE MAP"
+            Section.DASHBOARD -> currentBikeName ?: "OPENVOGE"
         }
     }
 
@@ -1868,6 +2010,9 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         speedometerView.setSpeed(state.speedValue)
         tvCameraSpeedValue.text = state.speedValue.toString()
         tvCameraSpeedUnit.text = state.speedUnit.badgeText
+        tvMapSpeedValue.text = state.speedValue.toString()
+        tvMapSpeedUnit.text = state.speedUnit.badgeText
+        rideMap.setDistanceUnit(state.speedUnit)
         if (state.bikeName != null) {
             tvTelemetryStatus.text = state.telemetryStatus
             tvTelemetryDevice.visibility = View.VISIBLE

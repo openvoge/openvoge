@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One place in the "Where to?" results -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingTop="13dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="13dp">
+
+    <ImageView
+        android:id="@+id/ivPlaceIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_settings_icon_box"
+        android:importantForAccessibility="no"
+        android:padding="9dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_pin_neo"
+        app:tint="#FFFFFF" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvPlaceName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/space_grotesk_bold"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/neo_ink"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvPlaceDetail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/space_mono_bold"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/neo_ink_muted"
+            android:textSize="10.5sp" />
+    </LinearLayout>
+
+</LinearLayout>

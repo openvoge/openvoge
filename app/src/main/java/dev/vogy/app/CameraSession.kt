@@ -58,6 +58,7 @@ object CameraSession : CameraController.Listener {
         recordingStartedAtMillis = 0L
         CameraRecordingService.stop(context.applicationContext)
         val ctrl = controller(context)
+        ctrl.stopLocalRecording()
         ctrl.stopRecording { ok ->
             Log.d(TAG, "Camera stopRecording result: $ok")
             // No screen left to show the stream: release the connection too
@@ -73,6 +74,8 @@ object CameraSession : CameraController.Listener {
     }
 
     private fun sendStart(context: Context, allowToggle: Boolean) {
+        // The phone records the live stream itself; the camera's own SD recording is best-effort
+        controller(context).startLocalRecording()
         controller(context).startRecording(allowToggle) { ok ->
             Log.d(TAG, "Camera startRecording result: $ok (allowToggle=$allowToggle)")
         }

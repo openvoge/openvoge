@@ -81,6 +81,23 @@ class CameraController(private val context: Context, private val listener: Liste
     @Volatile private var activeHost: String? = null
     private var rtspProxy: RtspProxy? = null
 
+    /** Writes the live stream to MP4 on the phone; fed by the proxy's RTP tap. */
+    private val streamRecorder = StreamRecorder(context)
+
+    val isRecordingLocally: Boolean get() = streamRecorder.isRecording
+
+    fun startLocalRecording() = streamRecorder.start()
+
+    fun stopLocalRecording() = streamRecorder.stop()
+
+    /** False while nothing is on screen: packets stop being forwarded to the (idle) player. */
+    fun setPreviewActive(active: Boolean) {
+        rtspProxy?.forwardToPlayer = active
+        previewActive = active
+    }
+
+    @Volatile private var previewActive = true
+
     private var streamExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     // streamExecutor is held by the connection monitor loop while connected, so commands get their own thread
     private var commandExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -113,6 +130,7 @@ class CameraController(private val context: Context, private val listener: Liste
         activeHost = null
         rtspProxy?.stop()
         rtspProxy = null
+        streamRecorder.onStreamRestarted() // close the open MP4 cleanly; a reconnect starts a new one
         stopStatusSocket()
         mjpegReader.stop()
         cancelHeartbeat()
@@ -215,7 +233,11 @@ class CameraController(private val context: Context, private val listener: Liste
         // ── Step 8: Start RTSP streaming via local sanitizing proxy ───────────
         postStatus(context.getString(R.string.camera_status_video))
         rtspProxy?.stop()
-        val proxy = RtspProxy(targetHost = host, targetPort = RTSP_PORT).also { rtspProxy = it }
+        streamRecorder.onStreamRestarted()
+        val proxy = RtspProxy(targetHost = host, targetPort = RTSP_PORT, recorder = streamRecorder).also {
+            it.forwardToPlayer = previewActive
+            rtspProxy = it
+        }
         val localPort = proxy.start()
         val proxyUrl = "rtsp://127.0.0.1:$localPort$rtspPath"
         Log.i(TAG, "RTSP stream routed via proxy: $proxyUrl -> $host:$RTSP_PORT$rtspPath")
@@ -238,6 +260,7 @@ class CameraController(private val context: Context, private val listener: Liste
         activeHost = null
         rtspProxy?.stop()
         rtspProxy = null
+        streamRecorder.onStreamRestarted() // close the open MP4 cleanly; a reconnect starts a new one
         stopStatusSocket()
         cancelHeartbeat()
         unbindNetwork()
