@@ -293,7 +293,9 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
             activity = this,
             section = mapSection,
             requestLocationPermission = ::requestLocationPermissionsIfNeeded,
-            decorateSheet = ::applyDottedSheetBackground
+            decorateSheet = ::applyDottedSheetBackground,
+            // The navigation notification carries the next turn and the End action
+            onNavigationStarting = ::requestNotificationPermissionIfNeeded
         )
         speedometerView = findViewById(R.id.speedometerView)
         tvRpmValue = findViewById(R.id.tvRpmValue)
@@ -483,6 +485,8 @@ class MainActivity : AppCompatActivity(), MotorcycleTelemetryController.Listener
         updateHeaderLocation()
         startControllers()
         attachToCameraSession()
+        // Navigation outlives the activity (screen off, theme change): come back straight to it
+        if (NavigationSession.state.value != null) showMapSection()
     }
 
     /** Re-attaches to a camera session that outlived a previous activity (e.g. recording with the app closed). */

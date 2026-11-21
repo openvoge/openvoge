@@ -129,6 +129,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     val bikeRegistry: BikeRegistry get() = telemetryController.registry
 
+    /** Turn-by-turn guidance reaches the bike's dashboard through this ViewModel's bike link. */
+    private val navigationDashboard = object : NavigationSession.Dashboard {
+        override val isConnected: Boolean get() = telemetryController.isLinkReady
+        override val isReady: Boolean get() = telemetryController.canSendNavigation
+        override fun send(frames: List<ByteArray>) {
+            telemetryController.sendNavigationFrames(frames, BikeNavProtocol.FRAME_SPACING_MS)
+        }
+    }
+
+    init {
+        NavigationSession.dashboard = navigationDashboard
+    }
+
     /** Reconnects to the remembered bike only if the user enabled auto-connect for it. */
     fun startAutoConnect() {
         telemetryController.startAutoConnect()
@@ -151,6 +164,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     override fun onCleared() {
+        if (NavigationSession.dashboard === navigationDashboard) NavigationSession.dashboard = null
         telemetryController.stop()
         super.onCleared()
     }

@@ -43,6 +43,9 @@ data class Maneuver(
     /** Index into [MotoRoute.points] where this maneuver starts. */
     val beginShapeIndex: Int,
     val roundaboutExitCount: Int?,
+    /** Heading (0–359°, clockwise from north) arriving at and leaving the maneuver point; null when unknown. */
+    val bearingBefore: Int? = null,
+    val bearingAfter: Int? = null,
 )
 
 data class MotoRoute(

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Next-maneuver banner over the map: accent card, black border, hard shadow -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="5dp"
+        android:top="5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="14dp" />
+            <solid android:color="#000000" />
+        </shape>
+    </item>
+
+    <item
+        android:bottom="5dp"
+        android:right="5dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="14dp" />
+            <solid android:color="?attr/neoAccent" />
+            <stroke
+                android:width="3dp"
+                android:color="#000000" />
+        </shape>
+    </item>
+</layer-list>

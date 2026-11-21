@@ -183,6 +183,29 @@ class MotorcycleTelemetryController(
         closeGatt()
     }
 
+    /** Connected and receiving telemetry, whatever the protocol. */
+    val isLinkReady: Boolean get() = linkReady
+
+    /** The modern VOGE link (the one the official app navigates on) also drives the dashboard's turn arrows. */
+    val canSendNavigation: Boolean get() = linkReady && telemetryProtocol == TelemetryProtocol.MODERN
+
+    /**
+     * Writes [frames] to the bike in order, [spacingMs] apart, through the same serial GATT queue
+     * as telemetry. Frames still pending when the link drops are discarded.
+     */
+    fun sendNavigationFrames(frames: List<ByteArray>, spacingMs: Long) {
+        if (!canSendNavigation) return
+        frames.forEachIndexed { index, frame ->
+            mainHandler.postDelayed({
+                val characteristic = writeCharacteristic
+                if (canSendNavigation && characteristic != null) {
+                    if (isDebug) Log.d(LOG_TAG, "nav tx ${frame.joinToString(" ") { "%02X".format(it) }}")
+                    enqueue(GattOp.Write(characteristic, frame))
+                }
+            }, index * spacingMs)
+        }
+    }
+
     // ─── Connection ──────────────────────────────────────────────────────────
 
     @SuppressLint("MissingPermission")

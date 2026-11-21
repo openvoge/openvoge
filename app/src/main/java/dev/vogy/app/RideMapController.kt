@@ -14,24 +14,30 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.color.MaterialColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
+import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.location.LocationComponentActivationOptions
 import org.maplibre.android.location.LocationComponentOptions
 import org.maplibre.android.location.OnCameraTrackingChangedListener
+import org.maplibre.android.location.OnLocationCameraTransitionListener
+import org.maplibre.android.location.engine.LocationEngineDefault
 import org.maplibre.android.location.modes.CameraMode
 import org.maplibre.android.location.modes.RenderMode
 import org.maplibre.android.maps.MapLibreMap
@@ -44,11 +50,12 @@ import kotlin.math.max
 
 /**
  * The MAP section: a MapLibre map with the OpenVOGE style, the rider's position, destination
- * search and motorcycle routes.
+ * search, motorcycle routes and turn-by-turn navigation.
  *
  * The MapView is only created the first time the section is shown, so riders who never open
  * the map don't pay for the GL surface or the tile downloads. Once created it follows the
- * activity lifecycle on its own.
+ * activity lifecycle on its own. Navigation itself lives in [NavigationSession]: this class only
+ * shows it, so it survives the screen turning off or the activity being recreated.
  */
 class RideMapController(
     private val activity: AppCompatActivity,
@@ -58,10 +65,15 @@ class RideMapController(
     private val requestLocationPermission: () -> Unit,
     /** Applies the app's dotted neo-brutalist background to a bottom sheet. */
     decorateSheet: (View) -> Unit,
+    /** Called right before navigation starts (e.g. to ask for the notification permission). */
+    private val onNavigationStarting: () -> Unit,
 ) : DefaultLifecycleObserver {
 
     private companion object {
         const val FOLLOW_ZOOM = 15.5
+        const val NAV_ZOOM = 17.0
+        /** While navigating the arrow sits low on the map so more road ahead is visible. */
+        const val NAV_ARROW_FROM_TOP = 0.35
         const val FOLLOW_TRANSITION_MS = 750L
         const val FIT_ROUTE_MS = 800
         const val MAX_ZOOM = 19.0
@@ -69,11 +81,21 @@ class RideMapController(
 
     private val container: FrameLayout = section.findViewById(R.id.mapContainer)
     private val locateButton: ImageButton = section.findViewById(R.id.btnMapLocate)
+    private val searchBar: View = section.findViewById(R.id.mapSearchBar)
+    private val navBanner: View = section.findViewById(R.id.navBanner)
+    private val navManeuverIcon: ImageView = section.findViewById(R.id.ivNavManeuver)
+    private val navDistance: TextView = section.findViewById(R.id.tvNavDistance)
+    private val navInstruction: TextView = section.findViewById(R.id.tvNavInstruction)
     private val routeCard: View = section.findViewById(R.id.routeCard)
     private val routeTitle: TextView = section.findViewById(R.id.tvRouteTitle)
     private val routeDetail: TextView = section.findViewById(R.id.tvRouteDetail)
     private val routeStatus: TextView = section.findViewById(R.id.tvRouteStatus)
     private val routeOptions: LinearLayout = section.findViewById(R.id.layoutRouteOptions)
+    private val routeActions: View = section.findViewById(R.id.layoutRouteActions)
+    private val routeClear: View = section.findViewById(R.id.btnRouteClear)
+    private val navigatingRow: View = section.findViewById(R.id.layoutNavigating)
+    private val navSummary: TextView = section.findViewById(R.id.tvNavSummary)
+    private val navDashStatus: TextView = section.findViewById(R.id.tvNavDashStatus)
     private val density = activity.resources.displayMetrics.density
 
     private val searchSheet = DestinationSearchSheet(
@@ -93,7 +115,7 @@ class RideMapController(
     /** Following started before the first GPS fix: MapLibre drops the zoom then, so redo it on the fix. */
     private var zoomOnFirstFix = false
 
-    // Route state
+    // Route planning state
     private var destination: Place? = null
     private var routes: List<MotoRoute> = emptyList()
     private var selectedRoute = 0
@@ -101,20 +123,45 @@ class RideMapController(
     private var routeJob: Job? = null
     private var distanceUnit = SpeedUnit.KMH
 
+    // Navigation display state
+    private var navigation: NavigationSession.State? = null
+    private var shownNavRoute: MotoRoute? = null
+    /** The map's own GPS engine is off while navigating: the session feeds the arrow instead. */
+    private var puckFedBySession = false
+
+    private val navigating: Boolean get() = navigation != null
+
     init {
         locateButton.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             onLocateTapped()
         }
-        section.findViewById<View>(R.id.mapSearchBar).setOnClickListener {
+        searchBar.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             searchSheet.show()
         }
-        section.findViewById<View>(R.id.btnRouteClear).setOnClickListener {
+        routeClear.setOnClickListener {
             it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             clearRoute()
         }
+        section.findViewById<View>(R.id.btnRouteStart).setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            startNavigation(simulate = false)
+        }
+        section.findViewById<View>(R.id.btnRouteSimulate).setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            startNavigation(simulate = true)
+        }
+        section.findViewById<View>(R.id.btnNavEnd).setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+            NavigationSession.stop(activity)
+        }
         renderLocateButton()
+        activity.lifecycleScope.launch {
+            activity.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                NavigationSession.state.collect(::showNavigation)
+            }
+        }
     }
 
     /** Call every time the MAP section becomes visible. */
@@ -131,6 +178,7 @@ class RideMapController(
         if (unit == distanceUnit) return
         distanceUnit = unit
         renderRouteCard()
+        navigation?.let(::renderNavigation)
     }
 
     // ── Map setup ────────────────────────────────────────────────────────────
@@ -167,9 +215,9 @@ class RideMapController(
             setAttributionTintColor(ContextCompat.getColor(activity, R.color.neo_ink))
             setAttributionGravity(Gravity.BOTTOM or Gravity.START)
             setAttributionMargins(dp(14), 0, 0, dp(14))
-            // Below the search bar
+            // Below the search bar / maneuver banner
             setCompassGravity(Gravity.TOP or Gravity.END)
-            setCompassMargins(0, dp(86), dp(16), 0)
+            setCompassMargins(0, dp(118), dp(16), 0)
         }
         readyMap.setMaxZoomPreference(MAX_ZOOM)
         // Start at street level where the rider last was: if the first fix lands on the same spot
@@ -189,12 +237,14 @@ class RideMapController(
         }
         // Long-press anywhere: route there. The fix for places no search engine knows.
         readyMap.addOnMapLongClickListener { latLng ->
+            if (navigating) return@addOnMapLongClickListener false
             mapView?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             dropPin(GeoPoint(latLng.latitude, latLng.longitude))
             true
         }
         // Tap an alternative route line to pick it
         readyMap.addOnMapClickListener { latLng ->
+            if (navigating) return@addOnMapClickListener false
             val index = routeLayers?.routeIndexAt(readyMap, latLng, touchRadiusPx = 14 * density)
             if (index != null && index != selectedRoute) {
                 selectRoute(index)
@@ -210,6 +260,9 @@ class RideMapController(
                 accentColor = MaterialColors.getColor(activity, R.attr.neoAccent, Color.BLACK),
             )
             showRider(requestIfMissing = true)
+            // Navigation may have started before the map existed (e.g. the activity was recreated)
+            shownNavRoute = null
+            navigation?.let(::renderNavigation)
         }
     }
 
@@ -239,6 +292,7 @@ class RideMapController(
             })
         }
         locationComponent.setLocationComponentEnabled(true)
+        if (navigating) return
         locationComponent.setRenderMode(RenderMode.NORMAL)
         if (!hasCenteredOnRider && destination == null) {
             hasCenteredOnRider = true
@@ -251,6 +305,10 @@ class RideMapController(
         val readyMap = map ?: return
         val locationComponent = readyMap.locationComponent
         if (!locationComponent.isLocationComponentActivated) return
+        if (navigating) {
+            followRiderNavigating()
+            return
+        }
         zoomOnFirstFix = locationComponent.lastKnownLocation == null
         locationComponent.setCameraMode(
             CameraMode.TRACKING,
@@ -259,6 +317,29 @@ class RideMapController(
             null,
             null,
             null
+        )
+    }
+
+    /**
+     * Heading-up and close in, with the arrow low on the map: the view while riding a route.
+     * Kept flat on purpose: MapLibre drops a tracking tilt now and then, and a view that flips
+     * between 3D and flat mid-ride is worse than a steady flat one.
+     */
+    private fun followRiderNavigating() {
+        val locationComponent = map?.locationComponent?.takeIf { it.isLocationComponentActivated } ?: return
+        locationComponent.setRenderMode(RenderMode.GPS)
+        // Padding is ignored while the camera mode is still transitioning: apply it after
+        val settle = {
+            if (navigating && locationComponent.isLocationComponentActivated) {
+                locationComponent.paddingWhileTracking(doubleArrayOf(0.0, container.height * NAV_ARROW_FROM_TOP, 0.0, 0.0), FOLLOW_TRANSITION_MS)
+            }
+        }
+        locationComponent.setCameraMode(
+            CameraMode.TRACKING_GPS, FOLLOW_TRANSITION_MS, NAV_ZOOM, null, 0.0,
+            object : OnLocationCameraTransitionListener {
+                override fun onLocationCameraTransitionFinished(cameraMode: Int) = settle()
+                override fun onLocationCameraTransitionCanceled(cameraMode: Int) = settle()
+            }
         )
     }
 
@@ -301,6 +382,7 @@ class RideMapController(
         LocationComponentOptions.builder(activity)
             .foregroundDrawable(R.drawable.ic_map_puck_neo)
             .backgroundDrawable(R.drawable.ic_map_puck_none)
+            .gpsDrawable(R.drawable.ic_map_puck_nav_neo)
             .accuracyColor(MaterialColors.getColor(activity, R.attr.neoAccent, Color.BLACK))
             .accuracyAlpha(0.18f)
             .elevation(0f)
@@ -351,6 +433,7 @@ class RideMapController(
     }
 
     private fun routeTo(place: Place) {
+        if (navigating) return
         routeJob?.cancel()
         destination = place
         routes = emptyList()
@@ -416,14 +499,18 @@ class RideMapController(
     }
 
     private fun renderRouteCard() {
+        if (navigating) return
         val place = destination
         routeCard.visibility = if (place == null) View.GONE else View.VISIBLE
+        navigatingRow.visibility = View.GONE
+        routeClear.visibility = View.VISIBLE
         if (place == null) return
         routeTitle.text = place.name
         routeDetail.text = place.detail
         routeDetail.visibility = if (place.detail.isBlank()) View.GONE else View.VISIBLE
         routeStatus.text = routeMessage
         routeStatus.visibility = if (routeMessage == null) View.GONE else View.VISIBLE
+        routeActions.visibility = if (routes.isEmpty()) View.GONE else View.VISIBLE
 
         routeOptions.removeAllViews()
         routeOptions.visibility = if (routes.isEmpty()) View.GONE else View.VISIBLE
@@ -479,12 +566,170 @@ class RideMapController(
         )
     }
 
+    // ── Navigation ───────────────────────────────────────────────────────────
+
+    private fun startNavigation(simulate: Boolean) {
+        val place = destination ?: return
+        val route = routes.getOrNull(selectedRoute) ?: return
+        onNavigationStarting()
+        NavigationSession.start(activity, place, route, simulate)
+    }
+
+    /** Reacts to [NavigationSession]: enters, updates and leaves the navigation view. */
+    private fun showNavigation(state: NavigationSession.State?) {
+        val wasNavigating = navigating
+        navigation = state
+        when {
+            state != null -> renderNavigation(state)
+            wasNavigating -> leaveNavigation()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun renderNavigation(state: NavigationSession.State) {
+        // The card and layers describe the route being ridden, not the planning choices
+        destination = state.destination
+        searchBar.visibility = View.GONE
+        navBanner.visibility = View.VISIBLE
+        routeCard.visibility = View.VISIBLE
+        routeOptions.visibility = View.GONE
+        routeActions.visibility = View.GONE
+        routeClear.visibility = View.GONE
+        routeStatus.visibility = View.GONE
+        navigatingRow.visibility = View.VISIBLE
+
+        val locale = activity.resources.configuration.locales[0]
+        val progress = state.progress
+        val maneuver = state.nextManeuver
+        routeTitle.text = state.destination.name
+        routeDetail.visibility = View.VISIBLE
+        routeDetail.text = buildList {
+            if (state.simulated) add(activity.getString(R.string.nav_simulating_badge))
+            progress?.let {
+                add(activity.getString(
+                    R.string.nav_arrival_time,
+                    DateFormat.getTimeFormat(activity).format(Date(System.currentTimeMillis() + (it.durationRemainingSeconds * 1000).toLong()))
+                ))
+            }
+        }.joinToString(" · ")
+        navSummary.text = progress?.let {
+            "${RouteFormat.duration(it.durationRemainingSeconds)} · ${RouteFormat.distance(it.distanceRemainingMeters, distanceUnit, locale)}"
+        } ?: RouteFormat.duration(state.route.durationSeconds)
+        val dashboard = NavigationSession.dashboard
+        navDashStatus.text = activity.getString(
+            when {
+                dashboard?.isReady == true -> R.string.nav_bike_dash_on
+                dashboard?.isConnected == true -> R.string.nav_bike_dash_unsupported
+                else -> R.string.nav_bike_dash_off
+            }
+        )
+
+        // Banner: arrow, distance to the maneuver, what to do there
+        when {
+            state.arrived -> {
+                showManeuverIcon(arrival = true, direction = 0, roundabout = false)
+                navDistance.text = activity.getString(R.string.nav_arrived_banner)
+                navInstruction.text = state.destination.name
+            }
+            state.rerouting -> {
+                navDistance.text = activity.getString(R.string.nav_rerouting)
+                navInstruction.text = ""
+            }
+            progress != null && maneuver != null -> {
+                val index = progress.nextManeuverIndex
+                showManeuverIcon(
+                    arrival = maneuver.type in 4..6,
+                    direction = BikeNavProtocol.direction(state.route.maneuvers, index),
+                    roundabout = BikeNavProtocol.roundaboutExitDegrees(state.route.maneuvers, index) != null,
+                )
+                navDistance.text = RouteFormat.distance(progress.distanceToManeuverMeters, distanceUnit, locale)
+                navInstruction.text = maneuver.instruction
+            }
+            else -> {
+                showManeuverIcon(arrival = false, direction = BikeNavProtocol.STRAIGHT, roundabout = false)
+                navDistance.text = RouteFormat.duration(state.route.durationSeconds)
+                navInstruction.text = state.destination.name
+            }
+        }
+
+        // Map: only the route being ridden, the arrow fed by the session, heading-up camera
+        val layers = routeLayers ?: return
+        if (shownNavRoute !== state.route) {
+            shownNavRoute = state.route
+            layers.showRoutes(listOf(state.route), 0)
+            layers.showDestination(state.destination.point)
+        }
+        val locationComponent = map?.locationComponent?.takeIf { it.isLocationComponentActivated } ?: return
+        if (!puckFedBySession) {
+            puckFedBySession = true
+            locationComponent.setLocationEngine(null)
+            followRiderNavigating()
+        }
+        state.position?.let(locationComponent::forceLocationUpdate)
+    }
+
+    private fun showManeuverIcon(arrival: Boolean, direction: Int, roundabout: Boolean) {
+        var rotation = 0f
+        var mirrored = false
+        val icon = when {
+            arrival -> R.drawable.ic_nav_arrive
+            roundabout -> R.drawable.ic_nav_roundabout
+            else -> when (direction) {
+                BikeNavProtocol.RIGHT -> R.drawable.ic_nav_turn
+                BikeNavProtocol.LEFT -> R.drawable.ic_nav_turn.also { mirrored = true }
+                BikeNavProtocol.SLIGHT_RIGHT -> R.drawable.ic_nav_straight.also { rotation = 45f }
+                BikeNavProtocol.SLIGHT_LEFT -> R.drawable.ic_nav_straight.also { rotation = -45f }
+                BikeNavProtocol.SHARP_RIGHT -> R.drawable.ic_nav_straight.also { rotation = 135f }
+                BikeNavProtocol.SHARP_LEFT -> R.drawable.ic_nav_straight.also { rotation = -135f }
+                BikeNavProtocol.UTURN_LEFT -> R.drawable.ic_nav_uturn
+                BikeNavProtocol.UTURN_RIGHT -> R.drawable.ic_nav_uturn.also { mirrored = true }
+                else -> R.drawable.ic_nav_straight
+            }
+        }
+        navManeuverIcon.setImageResource(icon)
+        navManeuverIcon.rotation = rotation
+        navManeuverIcon.scaleX = if (mirrored) -1f else 1f
+    }
+
+    /** Navigation ended (arrived, END, or the notification): back to the regular map. */
+    private fun leaveNavigation() {
+        shownNavRoute = null
+        searchBar.visibility = View.VISIBLE
+        navBanner.visibility = View.GONE
+        val readyMap = map
+        val locationComponent = readyMap?.locationComponent?.takeIf { it.isLocationComponentActivated }
+        if (readyMap != null && locationComponent != null && puckFedBySession) {
+            locationComponent.setLocationEngine(LocationEngineDefault.getDefaultLocationEngine(activity))
+            locationComponent.setRenderMode(RenderMode.NORMAL)
+            // North-up and flat again, then back to plain following without the navigation offset
+            locationComponent.setCameraMode(CameraMode.NONE)
+            val flat = CameraPosition.Builder(readyMap.cameraPosition).bearing(0.0).tilt(0.0).zoom(FOLLOW_ZOOM).build()
+            val resumeFollowing = {
+                if (!navigating && locationComponent.isLocationComponentActivated) {
+                    locationComponent.setCameraMode(CameraMode.TRACKING)
+                    locationComponent.paddingWhileTracking(doubleArrayOf(0.0, 0.0, 0.0, 0.0))
+                }
+            }
+            readyMap.easeCamera(
+                CameraUpdateFactory.newCameraPosition(flat), FOLLOW_TRANSITION_MS.toInt(),
+                object : MapLibreMap.CancelableCallback {
+                    override fun onFinish() = resumeFollowing()
+                    override fun onCancel() = resumeFollowing()
+                }
+            )
+        }
+        puckFedBySession = false
+        clearRoute()
+    }
+
     private fun dp(value: Int) = (value * density).toInt()
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
     override fun onStart(owner: LifecycleOwner) {
         mapView?.onStart()
+        // MapLibre resets the tracking padding while stopped: put the riding view back
+        if (navigating && isFollowing) mapView?.post { followRiderNavigating() }
     }
 
     override fun onResume(owner: LifecycleOwner) {

@@ -36,6 +36,14 @@ OpenVOGE is an unofficial replacement for the stock VOGE app. It talks to the mo
 - **Where to?** Search places as you type, or tap **Nearest fuel** to list fuel stations around you, nearest first. That includes the many stations that have no name on the map.
 - **Long-press anywhere** to route there. Use it for places that no search engine knows.
 - **Motorcycle routes** with up to two alternatives. Each shows its time, distance and arrival time. Tap a route on the map or its card to pick it.
+
+### Turn-by-turn navigation
+- **START** turns the map heading-up, with the next maneuver on top: arrow, distance and what to do. The route card shows the time and distance left, and your arrival time.
+- **Turns on the bike's dashboard.** With the bike connected, the TFT shows the arrow, the distance to the next maneuver, the street names, the time and distance left, the arrival time, and the exit when you're at a roundabout. The frames match what the official app sends, byte for byte.
+- **Works with the screen off.** Guidance keeps running in the background with a notification showing the next turn, and an End button.
+- **Reroutes on its own** if you leave the route, and ends when you arrive.
+- **SIMULATE** rides the route by itself at 45 km/h. Use it to check the dashboard without moving.
+- Dashboard navigation needs the Bluetooth link the official app navigates on (characteristic `6052202a-…`). The route card tells you if your bike's link doesn't carry it.
 - **No account and no API key.** Everything comes from [OpenStreetMap](https://www.openstreetmap.org) and free community services:
 
   | What | Service |
@@ -100,8 +108,8 @@ Requirements: JDK 17 and Android SDK 36 (Android Studio Ladybug or newer works o
 | Permission | Why |
 |---|---|
 | Nearby devices (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`) | Find and connect to the bike |
-| Location | Your position on the map and the city name on the dashboard. On Android 11 and below, Android also requires it for Bluetooth scanning |
-| Notifications | The "Recording" notification with its Stop button |
+| Location | Your position on the map, navigation (also with the screen off, while you navigate), and the city name on the dashboard. On Android 11 and below, Android also requires it for Bluetooth scanning |
+| Notifications | The "Recording" notification with its Stop button, and the navigation notification with the next turn |
 | Foreground service, wake lock | Keep the camera session alive while recording with the screen off |
 
 ---

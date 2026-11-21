@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Navigation arrow on the map (rotated by the rider's heading): accent with a thick black outline -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="34dp"
+    android:height="34dp"
+    android:viewportWidth="34"
+    android:viewportHeight="34">
+
+    <!-- Hard offset shadow -->
+    <path
+        android:pathData="M 19,4 L 31,32 L 19,25.5 L 7,32 Z"
+        android:fillColor="#000000" />
+
+    <path
+        android:pathData="M 17,2 L 29,30 L 17,23.5 L 5,30 Z"
+        android:fillColor="?attr/neoAccent"
+        android:strokeColor="#000000"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round" />
+</vector>

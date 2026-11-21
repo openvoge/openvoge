@@ -79,9 +79,10 @@ object OpenMapServices {
      * Motorcycle routes from [from] to [to]: the best one first, then up to two alternatives.
      * [language] is a Valhalla locale for the spoken/written instructions, e.g. "es-ES".
      */
-    suspend fun motoRoutes(from: GeoPoint, to: GeoPoint, language: String): List<MotoRoute> =
+    suspend fun motoRoutes(from: GeoPoint, to: GeoPoint, language: String, headingDegrees: Int? = null): List<MotoRoute> =
         withContext(Dispatchers.IO) {
-            val (code, text) = request(VALHALLA, body = valhallaRequest(from, to, language), contentType = "application/json")
+            val body = valhallaRequest(from, to, language, headingDegrees)
+            val (code, text) = request(VALHALLA, body = body, contentType = "application/json")
             if (code in 200..299) parseValhalla(text)
             else throw valhallaError(text) ?: ServiceException(URL(VALHALLA).host, code)
         }
@@ -119,14 +120,21 @@ object OpenMapServices {
 
     // ── Requests and parsing (pure, unit-tested) ────────────────────────────
 
-    fun valhallaRequest(from: GeoPoint, to: GeoPoint, language: String): String =
-        JSONObject()
-            .put("locations", JSONArray().put(location(from)).put(location(to)))
+    /**
+     * [headingDegrees] is the rider's direction of travel when rerouting on the move, so the new
+     * route continues ahead instead of starting with a U-turn. Rerouting skips alternatives.
+     */
+    fun valhallaRequest(from: GeoPoint, to: GeoPoint, language: String, headingDegrees: Int? = null): String {
+        val origin = location(from)
+        if (headingDegrees != null) origin.put("heading", headingDegrees).put("heading_tolerance", 45)
+        return JSONObject()
+            .put("locations", JSONArray().put(origin).put(location(to)))
             .put("costing", "motorcycle")
-            .put("alternates", 2)
+            .put("alternates", if (headingDegrees == null) 2 else 0)
             .put("units", "kilometers")
             .put("language", language)
             .toString()
+    }
 
     private fun location(point: GeoPoint) = JSONObject().put("lat", point.lat).put("lon", point.lon)
 
@@ -208,6 +216,8 @@ object OpenMapServices {
                     streetNames = if (streets == null) emptyList() else (0 until streets.length()).map(streets::getString),
                     beginShapeIndex = shapeOffset + maneuver.optInt("begin_shape_index", 0),
                     roundaboutExitCount = maneuver.optInt("roundabout_exit_count", 0).takeIf { it > 0 },
+                    bearingBefore = if (maneuver.has("bearing_before")) maneuver.getInt("bearing_before") else null,
+                    bearingAfter = if (maneuver.has("bearing_after")) maneuver.getInt("bearing_after") else null,
                 )
             }
         }
