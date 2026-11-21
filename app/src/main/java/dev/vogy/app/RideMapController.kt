@@ -632,8 +632,13 @@ class RideMapController(
                 navInstruction.text = state.destination.name
             }
             state.rerouting -> {
+                navManeuverIcon.setImageResource(R.drawable.ic_search_neo)
+                navManeuverIcon.rotation = 0f
+                navManeuverIcon.scaleX = 1f
                 navDistance.text = activity.getString(R.string.nav_rerouting)
-                navInstruction.text = ""
+                navInstruction.text = state.destination.name
+                // The old route's numbers no longer mean anything
+                navSummary.text = "…"
             }
             progress != null && maneuver != null -> {
                 val index = progress.nextManeuverIndex

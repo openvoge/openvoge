@@ -15,7 +15,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
@@ -24,9 +23,9 @@ import java.util.Locale
  * Turn-by-turn navigation, alive for the whole process so it keeps going with the screen off.
  *
  * Fixes come from [NavigationService] (real GPS) or from the built-in simulation, which rides
- * the route by itself so the dashboard can be tested without moving. Each fix updates the
- * rider's progress, reroutes after leaving the route, detects arrival and feeds the bike's
- * dashboard through [dashboard].
+ * the route by itself so the dashboard can be tested without moving. [NavigationMonitor] decides
+ * what each fix means (guide, reroute, arrived, finished); this object acts on it and feeds the
+ * bike's dashboard through [dashboard].
  */
 object NavigationSession {
 
@@ -43,10 +42,11 @@ object NavigationSession {
         val destination: Place,
         val route: MotoRoute,
         val progress: NavProgress?,
-        /** The latest fix moved onto the route, for the map's arrow. */
+        /** The latest fix (moved onto the route while on it), for the map's arrow. */
         val position: Location?,
         val simulated: Boolean,
         val rerouting: Boolean,
+        /** Near the destination: "you're here". Navigation may still resume if the rider rides on past it. */
         val arrived: Boolean,
     ) {
         val nextManeuver: Maneuver? get() = progress?.let { route.maneuvers.getOrNull(it.nextManeuverIndex) }
@@ -55,9 +55,7 @@ object NavigationSession {
     private const val LOG_TAG = "NAV"
     private const val SIMULATION_SPEED_MPS = 12.5   // 45 km/h
     private const val SIMULATION_TICK_MS = 1_000L
-    private const val OFF_ROUTE_MIN_METERS = 35.0
-    private const val OFF_ROUTE_FIXES = 3
-    private const val REROUTE_COOLDOWN_MS = 15_000L
+    private const val REROUTE_COOLDOWN_MS = 10_000L
     private const val ARRIVED_SHOWN_MS = 8_000L
     /**
      * The dashboard gets a burst every second whether or not a fix arrived, like the official app
@@ -75,7 +73,7 @@ object NavigationSession {
     /** Set by whoever owns the bike link; frames are dropped while it's null or not ready. */
     var dashboard: Dashboard? = null
 
-    private var tracker: RouteProgressTracker? = null
+    private var monitor: NavigationMonitor? = null
     private var language = "en-US"
     private var simulationJob: Job? = null
     private var rerouteJob: Job? = null
@@ -84,19 +82,20 @@ object NavigationSession {
     /** The last real (or simulated) fix and when it arrived, for estimating progress until the next. */
     private var lastFix: Location? = null
     private var lastFixAt = 0L
-    private var offRouteFixes = 0
     private var lastRerouteAt = 0L
     private var lastBurstAt = 0L
     /** The dashboard got its opening burst on the current link. */
     private var dashboardPrimed = false
+    /** Arrival confirmed: only the "you're here" screen is left. */
+    private var finished = false
 
-    val isActive: Boolean get() = _state.value?.arrived == false
+    val isActive: Boolean get() = _state.value != null && !finished
 
     fun start(context: Context, destination: Place, route: MotoRoute, simulate: Boolean) {
         stopInternal(sendEnd = isActive)
         language = RouteFormat.valhallaLanguage(context.resources.configuration.locales[0])
-        tracker = RouteProgressTracker(route)
-        offRouteFixes = 0
+        monitor = NavigationMonitor(route)
+        finished = false
         lastRerouteAt = 0
         lastBurstAt = 0
         dashboardPrimed = false
@@ -122,29 +121,49 @@ object NavigationSession {
     /** A real GPS fix from [NavigationService]. Ignored while simulating. */
     fun onLocation(location: Location) {
         val current = _state.value ?: return
-        if (current.simulated || current.arrived) return
+        if (current.simulated || finished) return
         handleFix(location)
     }
 
     private fun handleFix(location: Location) {
         val current = _state.value ?: return
-        val routeTracker = tracker ?: return
-        val progress = routeTracker.update(GeoPoint(location.latitude, location.longitude))
-
-        if (progress.arrived) {
-            finish(current.copy(progress = progress, position = onRoute(location, progress)))
-            return
-        }
-
+        val nav = monitor ?: return
         lastFix = location
         lastFixAt = SystemClock.elapsedRealtime()
-        val offRouteLimit = maxOf(OFF_ROUTE_MIN_METERS, location.accuracy * 2.0)
-        offRouteFixes = if (progress.offRouteMeters > offRouteLimit) offRouteFixes + 1 else 0
-        val shownPosition = if (offRouteFixes == 0) onRoute(location, progress) else location
-        _state.value = current.copy(progress = progress, position = shownPosition)
-
-        if (offRouteFixes >= OFF_ROUTE_FIXES) reroute(location)
+        val result = nav.onFix(fixOf(location))
+        val progress = result.progress
+        when (result.status) {
+            NavigationMonitor.Status.GUIDING ->
+                _state.value = current.copy(progress = progress, position = onRoute(location, progress), arrived = false)
+            NavigationMonitor.Status.ARRIVED ->
+                _state.value = current.copy(progress = progress, position = location, arrived = true)
+            NavigationMonitor.Status.REROUTE -> {
+                // Off the route, or rode on past the destination: a new route from here
+                _state.value = current.copy(progress = progress, position = location, arrived = false)
+                reroute(location)
+            }
+            NavigationMonitor.Status.FINISHED ->
+                finish(current.copy(progress = progress, position = location))
+        }
         // The dashboard is fed by the steady tick, not by fixes: see GUIDANCE_TICK_MS
+    }
+
+    private var previousFix: NavigationMonitor.Fix? = null
+
+    private fun fixOf(location: Location): NavigationMonitor.Fix {
+        val point = GeoPoint(location.latitude, location.longitude)
+        val now = SystemClock.elapsedRealtime()
+        // Some phones leave out the speed: work it out from the previous fix so "stopped" means stopped
+        val speed = when {
+            location.hasSpeed() -> location.speed.toDouble()
+            else -> previousFix?.takeIf { now > it.timeMs }?.let { point.distanceTo(it.point) / ((now - it.timeMs) / 1000.0) } ?: 0.0
+        }
+        return NavigationMonitor.Fix(
+            point = point,
+            accuracyMeters = if (location.hasAccuracy()) location.accuracy.toDouble() else 10.0,
+            speedMps = speed,
+            timeMs = now,
+        ).also { previousFix = it }
     }
 
     /**
@@ -153,16 +172,16 @@ object NavigationSession {
      */
     private fun tick() {
         val current = _state.value ?: return
-        if (current.arrived) return
+        if (finished) return
         var progress = current.progress
         val fix = lastFix
-        val routeTracker = tracker
-        if (progress != null && fix != null && routeTracker != null && offRouteFixes == 0 && !current.rerouting) {
+        val nav = monitor
+        if (progress != null && fix != null && nav != null && nav.isGuiding && !current.rerouting) {
             val seconds = ((SystemClock.elapsedRealtime() - lastFixAt) / 1000.0).coerceAtMost(MAX_DEAD_RECKONING_SECONDS)
             val speed = if (fix.hasSpeed()) fix.speed.toDouble() else 0.0
             if (speed >= MIN_MOVING_SPEED_MPS && seconds > 0.0) {
                 // Estimates never finish the route or pass a turn: only real fixes do that
-                progress = routeTracker.estimate(speed * seconds)
+                progress = nav.tracker.estimate(speed * seconds)
                 _state.value = current.copy(progress = progress, position = onRoute(fix, progress))
             }
         }
@@ -213,26 +232,35 @@ object NavigationSession {
         lastRerouteAt = now
         val current = _state.value ?: return
         _state.value = current.copy(rerouting = true)
+        val from = GeoPoint(location.latitude, location.longitude)
         val heading = if (location.hasBearing() && location.speed > 2f) location.bearing.toInt() else null
         rerouteJob = scope.launch {
             try {
-                val route = OpenMapServices.motoRoutes(
-                    GeoPoint(location.latitude, location.longitude), current.destination.point, language, heading
-                ).first()
-                val newTracker = RouteProgressTracker(route)
+                val route = try {
+                    // Heading first, so the new route carries on ahead (or turns back) sensibly…
+                    OpenMapServices.motoRoutes(from, current.destination.point, language, heading).first()
+                } catch (e: OpenMapServices.RouteException) {
+                    // …but if no road matches that heading, any route beats staying on the old one
+                    if (heading == null) throw e
+                    OpenMapServices.motoRoutes(from, current.destination.point, language, null).first()
+                }
+                val newMonitor = NavigationMonitor(route)
                 // Progress must describe the new route's maneuvers right away, never the old one's
                 val fix = lastFix ?: location
-                val progress = newTracker.update(GeoPoint(fix.latitude, fix.longitude))
-                tracker = newTracker
-                offRouteFixes = 0
+                val result = newMonitor.onFix(fixOf(fix))
+                monitor = newMonitor
                 _state.value = _state.value?.copy(
-                    route = route, progress = progress, position = onRoute(fix, progress), rerouting = false
+                    route = route,
+                    progress = result.progress,
+                    position = onRoute(fix, result.progress),
+                    rerouting = false,
+                    arrived = result.status == NavigationMonitor.Status.ARRIVED,
                 )
                 Log.i(LOG_TAG, "Rerouted: ${route.lengthMeters.toInt()} m")
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                // Keep guiding on the old route; try again after the cooldown
+                // Keep guiding on the old route; the next off-route fix tries again after the cooldown
                 Log.w(LOG_TAG, "Reroute failed: $e")
                 _state.value = _state.value?.copy(rerouting = false)
             }
@@ -240,6 +268,7 @@ object NavigationSession {
     }
 
     private fun finish(arrivedState: State) {
+        finished = true
         sendEndFrame()
         simulationJob?.cancel()
         rerouteJob?.cancel()
@@ -248,7 +277,7 @@ object NavigationSession {
         NavigationService.stopSelfIfRunning()
         finishJob = scope.launch {
             delay(ARRIVED_SHOWN_MS)
-            if (_state.value?.arrived == true) _state.value = null
+            if (finished) _state.value = null
         }
     }
 
@@ -258,19 +287,21 @@ object NavigationSession {
         rerouteJob?.cancel()
         finishJob?.cancel()
         tickerJob?.cancel()
-        tracker = null
+        monitor = null
         lastFix = null
+        previousFix = null
         _state.value = null
     }
 
     // ── Simulation ───────────────────────────────────────────────────────────
 
-    /** Rides [route] at a steady motorcycle pace, one fix per second. */
+    /** Rides [route] at a steady motorcycle pace, one fix per second, and stops at the end. */
     private suspend fun simulate(route: MotoRoute) {
         val points = route.points
         var segment = 0
         var offset = 0.0
-        while (scope.isActive && _state.value?.arrived == false) {
+        var atEnd = false
+        while (!finished && _state.value != null) {
             val a = points[segment]
             val b = points[minOf(segment + 1, points.lastIndex)]
             val length = a.distanceTo(b)
@@ -279,7 +310,8 @@ object NavigationSession {
                 latitude = a.lat + t * (b.lat - a.lat)
                 longitude = a.lon + t * (b.lon - a.lon)
                 bearing = bearingBetween(a, b).toFloat()
-                speed = SIMULATION_SPEED_MPS.toFloat()
+                // Parked once it gets there, so the arrival is confirmed like a real stop
+                speed = if (atEnd) 0f else SIMULATION_SPEED_MPS.toFloat()
                 accuracy = 4f
                 time = System.currentTimeMillis()
                 elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
@@ -293,6 +325,7 @@ object NavigationSession {
             }
             if (segment >= points.lastIndex - 1 && offset >= points[segment].distanceTo(points[points.lastIndex])) {
                 offset = points[segment].distanceTo(points[points.lastIndex])
+                atEnd = true
             }
         }
     }
