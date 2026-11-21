@@ -290,10 +290,19 @@ class RideMapController(
                 override fun onCameraTrackingDismissed() = setFollowing(false)
                 override fun onCameraTrackingChanged(currentMode: Int) = setFollowing(currentMode != CameraMode.NONE)
             })
+            // The dot's beam: the bike's course while riding, the phone's compass while stopped
+            locationComponent.compassEngine?.let { phoneCompass ->
+                locationComponent.setCompassEngine(
+                    RiderHeadingCompassEngine(phoneCompass) {
+                        locationComponent.takeIf { it.isLocationComponentActivated }?.lastKnownLocation
+                    }
+                )
+            }
         }
         locationComponent.setLocationComponentEnabled(true)
         if (navigating) return
-        locationComponent.setRenderMode(RenderMode.NORMAL)
+        // Dot with a heading beam; the map itself stays north-up
+        locationComponent.setRenderMode(RenderMode.COMPASS)
         if (!hasCenteredOnRider && destination == null) {
             hasCenteredOnRider = true
             followRider()
@@ -383,6 +392,7 @@ class RideMapController(
             .foregroundDrawable(R.drawable.ic_map_puck_neo)
             .backgroundDrawable(R.drawable.ic_map_puck_none)
             .gpsDrawable(R.drawable.ic_map_puck_nav_neo)
+            .bearingDrawable(R.drawable.ic_map_puck_heading_neo)
             .accuracyColor(MaterialColors.getColor(activity, R.attr.neoAccent, Color.BLACK))
             .accuracyAlpha(0.18f)
             .elevation(0f)
@@ -705,7 +715,7 @@ class RideMapController(
         val locationComponent = readyMap?.locationComponent?.takeIf { it.isLocationComponentActivated }
         if (readyMap != null && locationComponent != null && puckFedBySession) {
             locationComponent.setLocationEngine(LocationEngineDefault.getDefaultLocationEngine(activity))
-            locationComponent.setRenderMode(RenderMode.NORMAL)
+            locationComponent.setRenderMode(RenderMode.COMPASS)
             // North-up and flat again, then back to plain following without the navigation offset
             locationComponent.setCameraMode(CameraMode.NONE)
             val flat = CameraPosition.Builder(readyMap.cameraPosition).bearing(0.0).tilt(0.0).zoom(FOLLOW_ZOOM).build()
